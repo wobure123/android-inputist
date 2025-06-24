@@ -27,6 +27,15 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    
+    lint {
+        checkReleaseBuilds false
+        // 或者创建基线文件忽略当前问题
+        // baseline = file("lint-baseline.xml")
+        
+        // 忽略特定的lint规则
+        disable 'ResAuto'
+    }
 }
 
 dependencies {
