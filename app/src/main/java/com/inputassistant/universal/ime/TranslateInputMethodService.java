@@ -210,9 +210,48 @@ public class TranslateInputMethodService extends InputMethodService {
                 // 构建最终文本：原文 + 分隔符 + 处理后文本
                 String finalText = currentInputText + "\n---\n" + processedText;
                 
-                // 选择全部文本并替换
-                ic.selectAll();
-                ic.commitText(finalText, 1);
+                // 开始批量编辑以提高性能
+                ic.beginBatchEdit();
+                
+                // 方法1：尝试删除所有文本并重新插入
+                try {
+                    // 获取光标前后的文本长度
+                    CharSequence textBefore = ic.getTextBeforeCursor(10000, 0);
+                    CharSequence textAfter = ic.getTextAfterCursor(10000, 0);
+                    
+                    int beforeLength = textBefore != null ? textBefore.length() : 0;
+                    int afterLength = textAfter != null ? textAfter.length() : 0;
+                    
+                    // 删除光标前的文本
+                    if (beforeLength > 0) {
+                        ic.deleteSurroundingText(beforeLength, 0);
+                    }
+                    
+                    // 删除光标后的文本
+                    if (afterLength > 0) {
+                        ic.deleteSurroundingText(0, afterLength);
+                    }
+                    
+                    // 插入新文本
+                    ic.commitText(finalText, 1);
+                    
+                } catch (Exception e) {
+                    Log.w(TAG, "Method 1 failed, trying method 2", e);
+                    
+                    // 方法2：尝试使用setComposingText
+                    try {
+                        ic.setComposingText(finalText, 1);
+                        ic.finishComposingText();
+                    } catch (Exception e2) {
+                        Log.w(TAG, "Method 2 failed, trying method 3", e2);
+                        
+                        // 方法3：直接commitText，让系统处理
+                        ic.commitText(finalText, 1);
+                    }
+                }
+                
+                // 结束批量编辑
+                ic.endBatchEdit();
                 
                 Log.d(TAG, "Text updated successfully");
                 showToast("文本已更新");
