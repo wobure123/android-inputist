@@ -1,6 +1,6 @@
 # 通用输入改写助手
 
-[![Build Android APK](https://github.com/username/android-inputist/actions/workflows/build-apk.yml/badge.svg)](https://github.com/username/android-inputist/actions/workflows/build-apk.yml)
+[![Build Android APK](https://github.com/wobure123/android-inputist/actions/workflows/build-apk.yml/badge.svg)](https://github.com/wobure123/android-inputist/actions/workflows/build-apk.yml)
 
 一款Android输入法应用，集成大语言模型(LLM)进行文本智能处理。
 
@@ -23,7 +23,7 @@
 ## 🚀 快速开始
 
 ### 1. 安装应用
-从 [Releases](https://github.com/username/android-inputist/releases) 页面下载最新的APK文件。
+从 [Releases](https://github.com/wobure123/android-inputist/releases) 页面下载最新的APK文件。
 
 ### 2. 配置API
 1. 打开应用
@@ -84,7 +84,7 @@ app/
 
 ### 本地构建
 ```bash
-git clone https://github.com/username/android-inputist.git
+git clone https://github.com/wobure123/android-inputist.git
 cd android-inputist
 ./gradlew assembleDebug
 ```
@@ -179,5 +179,12 @@ Models: gpt-3.5-turbo, gpt-4, gpt-4-turbo-preview
 - [ ] 性能优化
 - [ ] 多语言支持
 - [ ] 更多预设动作模板
+
+### 📈 更新日志
+**v2.0 (2025-06-24)**
+- 🚀 初始版本发布
+- ✨ 完整的自定义动作流系统
+- 🔧 修复AndroidX兼容性问题
+- 📦 优化构建配置和依赖管理
 
 如有问题或建议，请提交Issue或联系开发者。

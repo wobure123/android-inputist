@@ -20,41 +20,44 @@
             android:layout_marginBottom="24dp" />
 
         <!-- 动作名称 -->
-        <com.google.android.material.textfield.TextInputLayout
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:hint="动作名称">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/et_action_name"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="text"
-                android:maxLines="1"
-                android:imeOptions="actionNext" />
-
-        </com.google.android.material.textfield.TextInputLayout>
+            android:text="动作名称"
+            android:textSize="14sp"
+            android:layout_marginBottom="4dp" />
+        
+        <EditText
+            android:id="@+id/et_action_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:maxLines="1"
+            android:imeOptions="actionNext"
+            android:background="@drawable/example_background"
+            android:padding="12dp"
+            android:layout_marginBottom="16dp" />
 
         <!-- 系统指令 -->
-        <com.google.android.material.textfield.TextInputLayout
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            android:hint="系统指令"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/et_system_prompt"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textMultiLine"
-                android:minLines="5"
-                android:maxLines="10"
-                android:gravity="start|top"
-                android:scrollbars="vertical" />
-
-        </com.google.android.material.textfield.TextInputLayout>
+            android:text="系统指令"
+            android:textSize="14sp"
+            android:layout_marginBottom="4dp" />
+        
+        <EditText
+            android:id="@+id/et_system_prompt"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textMultiLine"
+            android:minLines="5"
+            android:maxLines="10"
+            android:gravity="start|top"
+            android:scrollbars="vertical"
+            android:background="@drawable/example_background"
+            android:padding="12dp"
+            android:layout_marginBottom="24dp" />
 
         <!-- 示例提示 -->
         <TextView
@@ -81,7 +84,7 @@
                 android:layout_weight="1"
                 android:text="取消"
                 android:layout_marginEnd="8dp"
-                style="@style/Widget.Material3.Button.OutlinedButton" />
+                style="@android:style/Widget.Material.Button.Borderless" />
 
             <Button
                 android:id="@+id/btn_save_action"
@@ -90,7 +93,8 @@
                 android:layout_weight="1"
                 android:text="保存"
                 android:layout_marginStart="8dp"
-                android:backgroundTint="@color/primary_color" />
+                android:backgroundTint="@color/primary_color"
+                android:textColor="@android:color/white" />
 
         </LinearLayout>
 
