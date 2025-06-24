@@ -7,6 +7,11 @@ on:
     branches: [ main, master ]
   workflow_dispatch:  # 允许手动触发
 
+permissions:
+  contents: write  # 需要写入权限来创建 release
+  packages: write  # 如果需要发布包
+  pull-requests: write  # 如果需要操作 PR
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -84,3 +89,5 @@ jobs:
         prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # 如果上面不工作，可以使用 Personal Access Token:
+        # GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
