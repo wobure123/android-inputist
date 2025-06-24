@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    
+    <!-- 主题色彩 -->
+    <color name="primary_color">#6750A4</color>
+    <color name="primary_variant">#625B71</color>
+    <color name="secondary_color">#7D5260</color>
+    
+    <!-- 文本颜色 -->
+    <color name="text_primary">#1C1B1F</color>
+    <color name="text_secondary">#49454F</color>
+    <color name="text_hint">#79747E</color>
+    
+    <!-- 背景颜色 -->
+    <color name="background_primary">#FFFBFE</color>
+    <color name="surface_color">#FFFBFE</color>
+    
+    <!-- 输入法相关颜色 -->
+    <color name="ime_background">#F5F5F5</color>
+    <color name="ime_text_color">#333333</color>
+    <color name="ime_button_background">#E8E8E8</color>
+    
+    <!-- 状态相关颜色 -->
+    <color name="status_success">#4CAF50</color>
+    <color name="status_error">#F44336</color>
+    <color name="status_warning">#FF9800</color>
+    
+    <!-- 系统颜色 -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="transparent">#00000000</color>
+    
+</resources>

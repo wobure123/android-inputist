@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="@color/ime_background">
+
+    <!-- 状态栏 -->
+    <TextView
+        android:id="@+id/tv_ime_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="通用输入改写助手"
+        android:textColor="@color/ime_text_color"
+        android:textSize="12sp"
+        android:gravity="center"
+        android:padding="8dp"
+        android:background="@drawable/status_bar_background" />
+
+    <!-- 动作按钮容器 -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp">
+
+        <LinearLayout
+            android:id="@+id/ll_action_buttons"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="4dp" />
+
+    </HorizontalScrollView>
+
+</LinearLayout>

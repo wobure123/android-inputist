@@ -14,3 +14,11 @@
 .cxx
 local.properties
 *.log
+
+# Gradle 分发包和缓存（GitHub Actions会自动下载）
+gradle-*/
+gradle.zip
+gradle.tar.gz
+
+# 确保包含gradle wrapper jar（小文件，构建必需）
+!gradle/wrapper/gradle-wrapper.jar
