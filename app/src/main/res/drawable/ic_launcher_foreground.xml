@@ -16,10 +16,10 @@
       android:pathData="M72,35 L82,42 L72,49 Z"/>
   
   <!-- 魔法效果点 -->
-  <circle android:fillColor="#FFC107"
-      android:cx="35" android:cy="75" android:r="3"/>
-  <circle android:fillColor="#FF5722"
-      android:cx="50" android:cy="70" android:r="2"/>
-  <circle android:fillColor="#9C27B0"
-      android:cx="65" android:cy="75" android:r="3"/>
+  <path android:fillColor="#FFC107"
+      android:pathData="M35,72 A3,3 0 1,1 35,78 A3,3 0 1,1 35,72"/>
+  <path android:fillColor="#FF5722"
+      android:pathData="M50,68 A2,2 0 1,1 50,72 A2,2 0 1,1 50,68"/>
+  <path android:fillColor="#9C27B0"
+      android:pathData="M65,72 A3,3 0 1,1 65,78 A3,3 0 1,1 65,72"/>
 </vector>
