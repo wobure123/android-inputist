@@ -1,0 +1,73 @@
+<resources>
+    <string name="app_name">通用输入改写助手</string>
+    <string name="ime_name">通用输入改写助手</string>
+    <string name="ime_description">一键文本处理助手，支持翻译、润色、总结等功能</string>
+    
+    <!-- 主界面 -->
+    <string name="main_title">配置中心</string>
+    <string name="api_settings_title">API设置</string>
+    <string name="api_base_url">API地址</string>
+    <string name="api_base_url_hint">https://api.openai.com/</string>
+    <string name="api_key">API密钥</string>
+    <string name="api_key_hint">输入您的API密钥</string>
+    <string name="api_model">模型名称</string>
+    <string name="api_model_hint">gpt-3.5-turbo</string>
+    <string name="save_api_config">保存API配置</string>
+    <string name="test_api_config">测试配置</string>
+    
+    <string name="actions_title">功能管理</string>
+    <string name="add_action">添加功能</string>
+    <string name="no_actions">暂无功能，点击添加按钮创建</string>
+    
+    <string name="guide_title">使用指南</string>
+    <string name="settings">设置</string>
+    
+    <!-- 动作编辑界面 -->
+    <string name="action_editor_title">编辑功能</string>
+    <string name="action_name">功能名称</string>
+    <string name="action_name_hint">如：翻译成英文</string>
+    <string name="system_prompt">系统指令</string>
+    <string name="system_prompt_hint">如：你是一个专业的翻译家，请将用户输入的文本翻译成英文...</string>
+    <string name="save_action">保存</string>
+    <string name="cancel">取消</string>
+    <string name="delete_action">删除</string>
+    
+    <!-- 通用 -->
+    <string name="ok">确定</string>
+    <string name="yes">是</string>
+    <string name="no">否</string>
+    <string name="edit">编辑</string>
+    <string name="delete">删除</string>
+    <string name="confirm_delete">确认删除</string>
+    <string name="confirm_delete_action">确定要删除此功能吗？</string>
+    
+    <!-- 错误和提示 -->
+    <string name="error_empty_field">此字段不能为空</string>
+    <string name="error_invalid_url">URL格式不正确</string>
+    <string name="api_config_saved">API配置已保存</string>
+    <string name="api_config_test_success">API配置测试成功</string>
+    <string name="api_config_test_failed">API配置测试失败</string>
+    <string name="action_saved">功能已保存</string>
+    <string name="action_deleted">功能已删除</string>
+    
+    <!-- 输入法相关 -->
+    <string name="ime_processing">正在处理...</string>
+    <string name="ime_ready">准备就绪</string>
+    <string name="ime_empty_input">输入框为空</string>
+    <string name="ime_no_actions">暂无可用功能</string>
+    <string name="ime_close">关闭</string>
+    <string name="ime_refresh">刷新</string>
+    
+    <!-- 使用指南 -->
+    <string name="guide_step_1_title">第一步：启用输入法</string>
+    <string name="guide_step_1_desc">进入系统设置 → 语言和输入法 → 虚拟键盘，启用"通用输入改写助手"</string>
+    <string name="guide_step_2_title">第二步：配置API</string>
+    <string name="guide_step_2_desc">在本应用的配置中心填写您的API地址、密钥和模型名称</string>
+    <string name="guide_step_3_title">第三步：添加功能</string>
+    <string name="guide_step_3_desc">创建自定义的处理功能，每个功能对应一个按钮和系统指令</string>
+    <string name="guide_step_4_title">第四步：开始使用</string>
+    <string name="guide_step_4_desc">在任意输入框中切换到本输入法，点击功能按钮处理文本</string>
+    
+    <string name="open_settings">打开设置</string>
+    <string name="got_it">知道了</string>
+</resources>

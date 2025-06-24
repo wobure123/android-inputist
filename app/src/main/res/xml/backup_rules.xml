@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- 排除敏感设置文件 -->
+    <exclude domain="sharedpref" path="inputist_settings"/>
+</full-backup-content>

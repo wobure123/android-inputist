@@ -1,0 +1,25 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+  <!-- 文本符号 -->
+  <path android:fillColor="#FFFFFF"
+      android:pathData="M25,30h58v6h-58z"/>
+  <path android:fillColor="#FFFFFF"
+      android:pathData="M25,42h45v6h-45z"/>
+  <path android:fillColor="#FFFFFF"
+      android:pathData="M25,54h55v6h-55z"/>
+  
+  <!-- AI转换箭头 -->
+  <path android:fillColor="#03DAC6"
+      android:pathData="M72,35 L82,42 L72,49 Z"/>
+  
+  <!-- 魔法效果点 -->
+  <circle android:fillColor="#FFC107"
+      android:cx="35" android:cy="75" android:r="3"/>
+  <circle android:fillColor="#FF5722"
+      android:cx="50" android:cy="70" android:r="2"/>
+  <circle android:fillColor="#9C27B0"
+      android:cx="65" android:cy="75" android:r="3"/>
+</vector>
