@@ -33,4 +33,68 @@
 
     </HorizontalScrollView>
 
+    <!-- 快捷操作栏 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:background="@drawable/status_background"
+        android:padding="8dp">
+
+        <!-- 删除按钮 -->
+        <Button
+            android:id="@+id/btn_delete"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:text="删除"
+            android:textSize="12sp"
+            android:background="@color/primary_color"
+            android:textColor="@android:color/white"
+            style="?android:attr/buttonBarButtonStyle" />
+
+        <!-- 空格按钮 -->
+        <Button
+            android:id="@+id/btn_space"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:layout_marginHorizontal="4dp"
+            android:text="空格"
+            android:textSize="12sp"
+            android:background="@color/primary_color"
+            android:textColor="@android:color/white"
+            style="?android:attr/buttonBarButtonStyle" />
+
+        <!-- 换行按钮 -->
+        <Button
+            android:id="@+id/btn_enter"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:layout_marginHorizontal="4dp"
+            android:text="换行"
+            android:textSize="12sp"
+            android:background="@color/primary_color"
+            android:textColor="@android:color/white"
+            style="?android:attr/buttonBarButtonStyle" />
+
+        <!-- 输入法切换按钮 -->
+        <Button
+            android:id="@+id/btn_switch_ime"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:text="切换"
+            android:textSize="12sp"
+            android:background="#FF6750A4"
+            android:textColor="@android:color/white"
+            style="?android:attr/buttonBarButtonStyle" />
+
+    </LinearLayout>
+
 </LinearLayout>

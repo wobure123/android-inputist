@@ -10,16 +10,21 @@ android {
         applicationId "com.inputassistant.universal"
         minSdk 24
         targetSdk 34
-        versionCode 1
-        versionName "2.0"
+        versionCode 2
+        versionName "2.1"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
+        debug {
+            debuggable true
+            // 使用统一的debug签名配置
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // 注意：Release版本应该使用正式签名
         }
     }
     

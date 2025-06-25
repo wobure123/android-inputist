@@ -66,6 +66,9 @@ public class TranslateInputMethodService extends InputMethodService {
         // 动态创建Action按钮
         createActionButtons();
         
+        // 设置快捷操作按钮
+        setupQuickActionButtons();
+        
         return keyboardView;
     }
 
@@ -180,6 +183,97 @@ public class TranslateInputMethodService extends InputMethodService {
     }
 
     /**
+     * 设置快捷操作按钮
+     */
+    private void setupQuickActionButtons() {
+        // 删除按钮
+        Button btnDelete = keyboardView.findViewById(R.id.btn_delete);
+        btnDelete.setOnClickListener(v -> {
+            InputConnection ic = getCurrentInputConnection();
+            if (ic != null) {
+                // 删除光标前的一个字符
+                CharSequence selectedText = ic.getSelectedText(0);
+                if (selectedText != null && selectedText.length() > 0) {
+                    // 如果有选中文本，删除选中的文本
+                    ic.commitText("", 1);
+                } else {
+                    // 删除光标前的一个字符
+                    ic.deleteSurroundingText(1, 0);
+                }
+                // 重新捕获文本
+                captureCurrentText();
+                updateStatusDisplay();
+            }
+        });
+
+        // 空格按钮
+        Button btnSpace = keyboardView.findViewById(R.id.btn_space);
+        btnSpace.setOnClickListener(v -> {
+            InputConnection ic = getCurrentInputConnection();
+            if (ic != null) {
+                ic.commitText(" ", 1);
+                captureCurrentText();
+                updateStatusDisplay();
+            }
+        });
+
+        // 换行按钮
+        Button btnEnter = keyboardView.findViewById(R.id.btn_enter);
+        btnEnter.setOnClickListener(v -> {
+            InputConnection ic = getCurrentInputConnection();
+            if (ic != null) {
+                ic.commitText("\n", 1);
+                captureCurrentText();
+                updateStatusDisplay();
+            }
+        });
+
+        // 输入法切换按钮
+        Button btnSwitchIme = keyboardView.findViewById(R.id.btn_switch_ime);
+        btnSwitchIme.setOnClickListener(v -> showInputMethodPicker());
+    }
+
+    /**
+     * 显示处理完成对话框
+     */
+    private void showCompletionDialog() {
+        // 延迟显示，确保文本更新完成
+        new android.os.Handler().postDelayed(() -> {
+            try {
+                showToast("✅ 处理完成！点击'切换'按钮可快速切换输入法");
+                
+                // 可选：自动隐藏输入法（用户可以通过切换按钮重新调出）
+                new android.os.Handler().postDelayed(() -> {
+                    try {
+                        requestHideSelf(0);
+                    } catch (Exception e) {
+                        Log.w(TAG, "Failed to hide input method", e);
+                    }
+                }, 2000); // 2秒后自动隐藏
+                
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to show completion dialog", e);
+            }
+        }, 500);
+    }
+
+    /**
+     * 显示输入法选择器
+     */
+    private void showInputMethodPicker() {
+        try {
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                imm.showInputMethodPicker();
+                Log.d(TAG, "Showing input method picker");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to show input method picker", e);
+            showToast("无法显示输入法选择器");
+        }
+    }
+
+    /**
      * 动态创建Action按钮
      */
     private void createActionButtons() {
@@ -259,8 +353,8 @@ public class TranslateInputMethodService extends InputMethodService {
                         updateInputText(result);
                         tvStatus.setText("处理完成");
                         
-                        // 切换回上一个输入法
-                        switchBackToPreviousInputMethod();
+                        // 显示完成提示，并提供快捷切换选项
+                        showCompletionDialog();
                     }
 
                     @Override
