@@ -1,0 +1,100 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    
+    <!-- 背景圆 -->
+    <circle android:fillColor="#1976D2" 
+            android:cx="24" 
+            android:cy="24" 
+            android:r="24"/>
+    
+    <!-- 机器人头像 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M24,8
+                         C28,8 31,11 31,15
+                         L31,23
+                         C31,27 28,30 24,30
+                         L24,30
+                         C20,30 17,27 17,23
+                         L17,15
+                         C17,11 20,8 24,8 Z"/>
+    
+    <!-- 机器人眼睛 -->
+    <circle android:fillColor="#1976D2" 
+            android:cx="21" 
+            android:cy="17" 
+            android:r="1.5"/>
+    <circle android:fillColor="#1976D2" 
+            android:cx="27" 
+            android:cy="17" 
+            android:r="1.5"/>
+    
+    <!-- 机器人嘴巴 -->
+    <path
+        android:fillColor="none"
+        android:strokeColor="#1976D2"
+        android:strokeWidth="1"
+        android:strokeLineCap="round"
+        android:pathData="M20,21 Q24,24 28,21"/>
+    
+    <!-- 机器人天线 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M23,8 L23,4 L25,4 L25,8"/>
+    <circle android:fillColor="#FF5722" 
+            android:cx="24" 
+            android:cy="4" 
+            android:r="1"/>
+    
+    <!-- 键盘简化版 -->
+    <rect android:fillColor="#FFFFFF" 
+          android:x="12" android:y="32" 
+          android:width="24" android:height="8" 
+          android:rx="2"/>
+    
+    <!-- 键盘按键 -->
+    <rect android:fillColor="#E3F2FD" 
+          android:x="14" android:y="34" 
+          android:width="3" android:height="2" 
+          android:rx="0.5"/>
+    <rect android:fillColor="#E3F2FD" 
+          android:x="18" android:y="34" 
+          android:width="3" android:height="2" 
+          android:rx="0.5"/>
+    <rect android:fillColor="#E3F2FD" 
+          android:x="22" android:y="34" 
+          android:width="3" android:height="2" 
+          android:rx="0.5"/>
+    <rect android:fillColor="#E3F2FD" 
+          android:x="26" android:y="34" 
+          android:width="3" android:height="2" 
+          android:rx="0.5"/>
+    <rect android:fillColor="#E3F2FD" 
+          android:x="30" android:y="34" 
+          android:width="3" android:height="2" 
+          android:rx="0.5"/>
+    
+    <!-- 空格键 -->
+    <rect android:fillColor="#BBDEFB" 
+          android:x="16" android:y="37" 
+          android:width="16" android:height="2" 
+          android:rx="1"/>
+    
+    <!-- 连接线 -->
+    <path
+        android:fillColor="none"
+        android:strokeColor="#64B5F6"
+        android:strokeWidth="1"
+        android:strokeLineCap="round"
+        android:strokeDasharray="2,1"
+        android:pathData="M24,30 L24,32"/>
+    
+    <!-- 智能指示点 -->
+    <circle android:fillColor="#4CAF50" 
+            android:cx="24" 
+            android:cy="31" 
+            android:r="0.8"/>
+</vector>

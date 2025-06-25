@@ -1,10 +1,5 @@
 # 通用输入改写助手
 
-[![Build Android APK](https:### 4. 启用输### 5. 创建动作
-1. 点击右下角的"+"按钮
-2. 输入动作名称（如"翻译成英文"）
-3. 输入系统指令（如"你是一个专业的翻译专家，请将用户输入的文本翻译成英文"）
-4. 保存动作
 
 ### 6. 使用
 1. 在任何应用的输入框中输入文本
@@ -14,7 +9,7 @@
 2. 在系统设置中启用"Inputist"
 3. 授予必要权限
 
-### 5. 创建动作ub.com/wobure123/android-inputist/actions/workflows/build-apk.yml/badge.svg)](https://github.com/wobure123/android-inputist/actions/workflows/build-apk.yml)
+### 5. 创建动作
 
 一款Android输入法应用，集成大语言模型(LLM)进行文本智能处理。
 
@@ -195,9 +190,6 @@ Models: gpt-3.5-turbo, gpt-4, gpt-4-turbo-preview
 - [x] 快捷操作栏（删除、空格、换行、切换）
 - [x] 一键输入法切换器
 - [x] 双模式文本处理（拼接/替换）
-- [x] 编译错误修复（showToast方法补充）
-- [x] CI/CD签名配置优化
-
 ### 🔄 待优化功能
 - [ ] 错误处理优化
 - [ ] 用户体验改进
@@ -214,9 +206,6 @@ Models: gpt-3.5-turbo, gpt-4, gpt-4-turbo-preview
 - 🎛️ 主界面新增处理模式设置开关
 - 💾 文本处理模式设置持久化保存
 - 🔔 处理完成提示显示当前使用模式
-- 🐛 修复编译错误：补充MainActivity.showToast方法
-- 🔧 优化CI/CD签名配置，解决Release构建问题
-- 🔧 修复GitHub Actions版本号提取问题
 
 **v2.1.0 (2025-06-25)**
 - 🎮 新增快捷操作栏
