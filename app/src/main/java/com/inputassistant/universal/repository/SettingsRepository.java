@@ -24,6 +24,7 @@ public class SettingsRepository {
     private static final String KEY_API_KEY = "api_key";
     private static final String KEY_MODEL_NAME = "model_name";
     private static final String KEY_ACTIONS_JSON = "actions_json";
+    private static final String KEY_PREVIOUS_IME = "previous_ime"; // 保存上一个输入法
 
     private final SharedPreferences sharedPreferences;
     private final Gson gson;
@@ -105,6 +106,15 @@ public class SettingsRepository {
 
     public boolean isConfigured() {
         return !getApiBaseUrl().isEmpty() && !getApiKey().isEmpty();
+    }
+
+    // 输入法相关方法
+    public void savePreviousInputMethod(String inputMethodId) {
+        sharedPreferences.edit().putString(KEY_PREVIOUS_IME, inputMethodId).apply();
+    }
+
+    public String getPreviousInputMethod() {
+        return sharedPreferences.getString(KEY_PREVIOUS_IME, "");
     }
 
     // 清除所有数据（用于重置或调试）

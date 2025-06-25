@@ -1,11 +1,14 @@
 package com.inputassistant.universal.ime;
 
+import android.content.Context;
 import android.inputmethodservice.InputMethodService;
+import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -31,6 +34,8 @@ public class TranslateInputMethodService extends InputMethodService {
     private LinearLayout keyboardView;
     private TextView tvStatus;
     private String currentInputText = "";
+    private String previousInputMethod = null; // 记录上一个输入法
+    private String lastInputMethod = ""; // 上一个输入法
 
     @Override
     public void onCreate() {
@@ -79,9 +84,75 @@ public class TranslateInputMethodService extends InputMethodService {
         super.onStartInputView(info, restarting);
         Log.d(TAG, "Starting input view");
         
+        // 记录当前的默认输入法（在切换到我们的输入法之前）
+        recordPreviousInputMethod();
+        
         // 每次显示时刷新文本
         captureCurrentText();
         updateStatusDisplay();
+    }
+
+    /**
+     * 记录上一个输入法
+     */
+    private void recordPreviousInputMethod() {
+        try {
+            String defaultIme = Settings.Secure.getString(
+                getContentResolver(), 
+                Settings.Secure.DEFAULT_INPUT_METHOD
+            );
+            
+            // 如果当前默认输入法不是我们的，则记录它
+            if (defaultIme != null && !defaultIme.contains(getPackageName())) {
+                previousInputMethod = defaultIme;
+                settingsRepository.savePreviousInputMethod(defaultIme);
+                Log.d(TAG, "Recorded previous IME: " + defaultIme);
+            } else {
+                // 尝试从持久化存储中获取
+                previousInputMethod = settingsRepository.getPreviousInputMethod();
+                Log.d(TAG, "Loaded previous IME from storage: " + previousInputMethod);
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to record previous input method", e);
+        }
+    }
+
+    /**
+     * 切换回上一个输入法
+     */
+    private void switchBackToPreviousInputMethod() {
+        if (previousInputMethod != null) {
+            try {
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) {
+                    // 延迟切换，确保文本更新完成
+                    new android.os.Handler().postDelayed(() -> {
+                        try {
+                            // 先隐藏当前输入法
+                            requestHideSelf(0);
+                            
+                            // 延迟一点再切换，给系统时间处理
+                            new android.os.Handler().postDelayed(() -> {
+                                try {
+                                    // 通知用户如何切换回原输入法
+                                    showToast("文本已更新，长按输入框可切换回原输入法");
+                                } catch (Exception e) {
+                                    Log.w(TAG, "Failed to show switch hint", e);
+                                }
+                            }, 500);
+                        } catch (Exception e) {
+                            Log.w(TAG, "Failed to hide input method", e);
+                        }
+                    }, 1000); // 1秒后执行切换
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to switch back to previous input method", e);
+            }
+        } else {
+            // 如果没有记录到上一个输入法，直接隐藏
+            requestHideSelf(0);
+            showToast("文本已更新，请手动切换输入法");
+        }
     }
 
     /**
@@ -188,6 +259,9 @@ public class TranslateInputMethodService extends InputMethodService {
                         Log.d(TAG, "API call successful: " + result);
                         updateInputText(result);
                         tvStatus.setText("处理完成");
+                        
+                        // 切换回上一个输入法
+                        switchBackToPreviousInputMethod();
                     }
 
                     @Override
@@ -208,7 +282,7 @@ public class TranslateInputMethodService extends InputMethodService {
         if (ic != null) {
             try {
                 // 构建最终文本：原文 + 分隔符 + 处理后文本
-                String finalText = currentInputText + "\n---\n" + processedText;
+                String finalText = currentInputText + "\n======\n" + processedText;
                 
                 // 开始批量编辑以提高性能
                 ic.beginBatchEdit();
@@ -293,5 +367,45 @@ public class TranslateInputMethodService extends InputMethodService {
      */
     private void showToast(String message) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * 切换到上一个输入法
+     */
+    private void switchToLastInputMethod() {
+        if (!TextUtils.isEmpty(lastInputMethod)) {
+            try {
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) {
+                    // 设置上一个输入法为当前输入法
+                    imm.setInputMethod(this.getWindow().getDecorView().getWindowToken(), lastInputMethod);
+                    Log.d(TAG, "Switched to last input method: " + lastInputMethod);
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error switching input method", e);
+            }
+        }
+    }
+
+    /**
+     * 记录当前输入法
+     */
+    private void recordCurrentInputMethod() {
+        try {
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                // 获取当前输入法组件
+                String currentInputMethod = Settings.Secure.getString(getContentResolver(), Settings.Secure.DEFAULT_INPUT_METHOD);
+                Log.d(TAG, "Current input method: " + currentInputMethod);
+                
+                // 如果与上一个输入法不同，则更新记录
+                if (!TextUtils.equals(currentInputMethod, lastInputMethod)) {
+                    lastInputMethod = currentInputMethod;
+                    Log.d(TAG, "Last input method updated: " + lastInputMethod);
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error recording current input method", e);
+        }
     }
 }

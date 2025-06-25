@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">通用输入改写助手</string>
-    <string name="ime_name">通用输入改写助手</string>
+    <string name="app_name">Inputist</string>
+    <string name="ime_name">Inputist</string>
     <string name="action_edit">编辑</string>
     <string name="action_delete">删除</string>
     <string name="action_add">添加</string>
