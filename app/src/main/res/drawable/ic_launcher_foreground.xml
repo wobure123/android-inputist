@@ -20,19 +20,19 @@
                          L40,29
                          C40,21 46,15 54,15 Z"/>
     
-    <!-- 机器人眼睛 -->
-    <circle android:fillColor="#1976D2" 
-            android:cx="48" 
-            android:cy="33" 
-            android:r="3"/>
-    <circle android:fillColor="#1976D2" 
-            android:cx="60" 
-            android:cy="33" 
-            android:r="3"/>
+    <!-- 机器人左眼 -->
+    <path
+        android:fillColor="#1976D2"
+        android:pathData="M48,33m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0"/>
+    
+    <!-- 机器人右眼 -->
+    <path
+        android:fillColor="#1976D2"
+        android:pathData="M60,33m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0"/>
     
     <!-- 机器人嘴巴（微笑弧线） -->
     <path
-        android:fillColor="none"
+        android:fillColor="#00000000"
         android:strokeColor="#1976D2"
         android:strokeWidth="2"
         android:strokeLineCap="round"
@@ -41,11 +41,12 @@
     <!-- 机器人天线 -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M52,15 L52,8 L56,8 L56,15"/>
-    <circle android:fillColor="#FF5722" 
-            android:cx="54" 
-            android:cy="8" 
-            android:r="2"/>
+        android:pathData="M52,15 L52,8 L56,8 L56,15 Z"/>
+    
+    <!-- 天线顶端 -->
+    <path
+        android:fillColor="#FF5722"
+        android:pathData="M54,8m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0"/>
     
     <!-- 键盘底座 -->
     <path
@@ -62,86 +63,65 @@
                          L21,69
                          C21,67 23,65 25,65 Z"/>
     
-    <!-- 键盘按键（简化的3行布局） -->
     <!-- 第一行按键 -->
-    <rect android:fillColor="#E3F2FD" 
-          android:x="28" android:y="69" 
-          android:width="6" android:height="4" 
-          android:rx="1"/>
-    <rect android:fillColor="#E3F2FD" 
-          android:x="36" android:y="69" 
-          android:width="6" android:height="4" 
-          android:rx="1"/>
-    <rect android:fillColor="#E3F2FD" 
-          android:x="44" android:y="69" 
-          android:width="6" android:height="4" 
-          android:rx="1"/>
-    <rect android:fillColor="#E3F2FD" 
-          android:x="52" android:y="69" 
-          android:width="6" android:height="4" 
-          android:rx="1"/>
-    <rect android:fillColor="#E3F2FD" 
-          android:x="60" android:y="69" 
-          android:width="6" android:height="4" 
-          android:rx="1"/>
-    <rect android:fillColor="#E3F2FD" 
-          android:x="68" android:y="69" 
-          android:width="6" android:height="4" 
-          android:rx="1"/>
-    <rect android:fillColor="#E3F2FD" 
-          android:x="76" android:y="69" 
-          android:width="6" android:height="4" 
-          android:rx="1"/>
+    <path
+        android:fillColor="#E3F2FD"
+        android:pathData="M28,69 Q27,69 27,70 L27,72 Q27,73 28,73 L33,73 Q34,73 34,72 L34,70 Q34,69 33,69 Z"/>
+    <path
+        android:fillColor="#E3F2FD"
+        android:pathData="M36,69 Q35,69 35,70 L35,72 Q35,73 36,73 L41,73 Q42,73 42,72 L42,70 Q42,69 41,69 Z"/>
+    <path
+        android:fillColor="#E3F2FD"
+        android:pathData="M44,69 Q43,69 43,70 L43,72 Q43,73 44,73 L49,73 Q50,73 50,72 L50,70 Q50,69 49,69 Z"/>
+    <path
+        android:fillColor="#E3F2FD"
+        android:pathData="M52,69 Q51,69 51,70 L51,72 Q51,73 52,73 L57,73 Q58,73 58,72 L58,70 Q58,69 57,69 Z"/>
+    <path
+        android:fillColor="#E3F2FD"
+        android:pathData="M60,69 Q59,69 59,70 L59,72 Q59,73 60,73 L65,73 Q66,73 66,72 L66,70 Q66,69 65,69 Z"/>
+    <path
+        android:fillColor="#E3F2FD"
+        android:pathData="M68,69 Q67,69 67,70 L67,72 Q67,73 68,73 L73,73 Q74,73 74,72 L74,70 Q74,69 73,69 Z"/>
+    <path
+        android:fillColor="#E3F2FD"
+        android:pathData="M76,69 Q75,69 75,70 L75,72 Q75,73 76,73 L81,73 Q82,73 82,72 L82,70 Q82,69 81,69 Z"/>
     
     <!-- 第二行按键 -->
-    <rect android:fillColor="#E3F2FD" 
-          android:x="30" android:y="75" 
-          android:width="6" android:height="4" 
-          android:rx="1"/>
-    <rect android:fillColor="#E3F2FD" 
-          android:x="38" android:y="75" 
-          android:width="6" android:height="4" 
-          android:rx="1"/>
-    <rect android:fillColor="#E3F2FD" 
-          android:x="46" android:y="75" 
-          android:width="6" android:height="4" 
-          android:rx="1"/>
-    <rect android:fillColor="#E3F2FD" 
-          android:x="54" android:y="75" 
-          android:width="6" android:height="4" 
-          android:rx="1"/>
-    <rect android:fillColor="#E3F2FD" 
-          android:x="62" android:y="75" 
-          android:width="6" android:height="4" 
-          android:rx="1"/>
-    <rect android:fillColor="#E3F2FD" 
-          android:x="70" android:y="75" 
-          android:width="6" android:height="4" 
-          android:rx="1"/>
+    <path
+        android:fillColor="#E3F2FD"
+        android:pathData="M30,75 Q29,75 29,76 L29,78 Q29,79 30,79 L35,79 Q36,79 36,78 L36,76 Q36,75 35,75 Z"/>
+    <path
+        android:fillColor="#E3F2FD"
+        android:pathData="M38,75 Q37,75 37,76 L37,78 Q37,79 38,79 L43,79 Q44,79 44,78 L44,76 Q44,75 43,75 Z"/>
+    <path
+        android:fillColor="#E3F2FD"
+        android:pathData="M46,75 Q45,75 45,76 L45,78 Q45,79 46,79 L51,79 Q52,79 52,78 L52,76 Q52,75 51,75 Z"/>
+    <path
+        android:fillColor="#E3F2FD"
+        android:pathData="M54,75 Q53,75 53,76 L53,78 Q53,79 54,79 L59,79 Q60,79 60,78 L60,76 Q60,75 59,75 Z"/>
+    <path
+        android:fillColor="#E3F2FD"
+        android:pathData="M62,75 Q61,75 61,76 L61,78 Q61,79 62,79 L67,79 Q68,79 68,78 L68,76 Q68,75 67,75 Z"/>
+    <path
+        android:fillColor="#E3F2FD"
+        android:pathData="M70,75 Q69,75 69,76 L69,78 Q69,79 70,79 L75,79 Q76,79 76,78 L76,76 Q76,75 75,75 Z"/>
     
     <!-- 第三行按键（空格键） -->
-    <rect android:fillColor="#BBDEFB" 
-          android:x="35" android:y="81" 
-          android:width="38" android:height="4" 
-          android:rx="2"/>
-    
-    <!-- 连接线（象征AI连接） -->
     <path
-        android:fillColor="none"
-        android:strokeColor="#64B5F6"
-        android:strokeWidth="2"
-        android:strokeLineCap="round"
-        android:strokeDasharray="3,2"
-        android:pathData="M54,59 Q54,62 54,65"/>
+        android:fillColor="#BBDEFB"
+        android:pathData="M35,81 Q33,81 33,83 L33,83 Q33,85 35,85 L71,85 Q73,85 73,83 L73,83 Q73,81 71,81 Z"/>
+    
+    <!-- 连接线（虚线效果用多个小段模拟） -->
+    <path
+        android:fillColor="#64B5F6"
+        android:pathData="M52,59 L52,61 M54,60 L54,62 M56,61 L56,63"/>
     
     <!-- 智能光效点 -->
-    <circle android:fillColor="#4CAF50" 
-            android:cx="50" 
-            android:cy="62" 
-            android:r="1.5"/>
-    <circle android:fillColor="#4CAF50" 
-            android:cx="58" 
-            android:cy="62" 
-            android:r="1"/>
+    <path
+        android:fillColor="#4CAF50"
+        android:pathData="M50,62m-1.5,0a1.5,1.5 0,1 1,3 0a1.5,1.5 0,1 1,-3 0"/>
+    <path
+        android:fillColor="#4CAF50"
+        android:pathData="M58,62m-1,0a1,1 0,1 1,2 0a1,1 0,1 1,-2 0"/>
   </group>
 </vector>
