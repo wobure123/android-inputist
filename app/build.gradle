@@ -20,10 +20,20 @@ android {
             // keyPassword 'your_key_password'
             
             // 临时使用debug签名（开发阶段）
-            storeFile file(System.getProperty('user.home') + '/.android/debug.keystore')
-            storePassword 'android'
-            keyAlias 'androiddebugkey'
-            keyPassword 'android'
+            // 检查debug keystore是否存在，不存在则使用debug配置
+            def debugKeystore = file(System.getProperty('user.home') + '/.android/debug.keystore')
+            if (debugKeystore.exists()) {
+                storeFile debugKeystore
+                storePassword 'android'
+                keyAlias 'androiddebugkey'
+                keyPassword 'android'
+            } else {
+                // CI环境或debug keystore不存在时，使用debug配置
+                storeFile null
+                storePassword null
+                keyAlias null
+                keyPassword null
+            }
         }
     }
 
@@ -48,7 +58,15 @@ android {
             debuggable false                // 禁用调试功能
             minifyEnabled true              // 启用代码压缩
             shrinkResources true            // 移除未使用的资源
-            signingConfig signingConfigs.release  // 使用release签名配置
+            
+            // 签名配置：检查是否有可用的release签名，否则使用debug签名
+            def debugKeystore = file(System.getProperty('user.home') + '/.android/debug.keystore')
+            if (debugKeystore.exists()) {
+                signingConfig signingConfigs.release
+            } else {
+                signingConfig signingConfigs.debug
+            }
+            
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
