@@ -216,6 +216,7 @@ Models: gpt-3.5-turbo, gpt-4, gpt-4-turbo-preview
 - 🔔 处理完成提示显示当前使用模式
 - 🐛 修复编译错误：补充MainActivity.showToast方法
 - 🔧 优化CI/CD签名配置，解决Release构建问题
+- 🔧 修复GitHub Actions版本号提取问题
 
 **v2.1.0 (2025-06-25)**
 - 🎮 新增快捷操作栏

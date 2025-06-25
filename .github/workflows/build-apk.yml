@@ -68,7 +68,8 @@ jobs:
     - name: Get version from build.gradle
       id: get_version
       run: |
-        VERSION_NAME=$(grep "versionName" app/build.gradle | sed 's/.*"\(.*\)".*/\1/')
+        # 提取基础版本号，只从defaultConfig块中获取，避免获取到suffix
+        VERSION_NAME=$(grep -A 10 "defaultConfig" app/build.gradle | grep "versionName" | sed 's/.*"\([^"]*\)".*/\1/')
         echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
         echo "Version: $VERSION_NAME"
     
@@ -82,13 +83,19 @@ jobs:
           🚀 Inputist v${{ steps.get_version.outputs.version_name }} - 智能输入法助手
           
           ## ✨ 新功能
-          - 🔄 一键输入法切换器
-          - ✏️ 基础编辑功能（删除、空格、换行）
-          - 📱 改进的用户界面
-          - 🎯 优化的分割线样式 (======)
+          - 🔄 双模式文本处理（拼接/替换模式）
+          - 🎛️ 主界面处理模式设置开关
+          - 🎮 快捷操作栏（删除、空格、换行、切换）
+          - � 一键输入法切换器
+          - �📱 优化的用户界面和体验
+          
+          ## 🐛 修复内容
+          - 🐛 修复编译错误和构建问题
+          - 🔧 优化CI/CD签名配置
+          - 📝 完善文档和使用说明
           
           ## 📱 下载说明
-          - **app-debug.apk**: 调试版本，包含调试信息和后缀标识
+          - **app-debug.apk**: 调试版本，包含调试信息
           - **app-release.apk**: 发布版本，代码优化和资源压缩
           
           ## 🔧 安装方法
@@ -97,9 +104,11 @@ jobs:
           3. 点击APK文件安装
           
           ## 💡 使用方法
-          1. 长按输入框 → 选择"Inputist"
-          2. 执行AI动作（翻译、润色等）
-          3. 点击"切换"按钮快速切换回原输入法
+          1. 配置API设置（OpenAI兼容）
+          2. 选择文本处理模式（拼接/替换）
+          3. 创建自定义动作（翻译、润色等）
+          4. 在任意应用中切换到Inputist输入法
+          5. 使用快捷操作栏或动作按钮处理文本
         files: |
           app/build/outputs/apk/debug/app-debug.apk
           app/build/outputs/apk/release/app-release.apk
