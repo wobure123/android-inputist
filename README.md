@@ -190,6 +190,10 @@ Models: gpt-3.5-turbo, gpt-4, gpt-4-turbo-preview
 - [x] 快捷操作栏（删除、空格、换行、切换）
 - [x] 一键输入法切换器
 - [x] 双模式文本处理（拼接/替换）
+- [x] 编译错误修复（showToast方法补充）
+- [x] CI/CD签名配置优化
+- [x] 全新应用Logo设计（键盘+AI机器人）
+- [x] Release版本ProGuard混淆问题修复
 ### 🔄 待优化功能
 - [ ] 错误处理优化
 - [ ] 用户体验改进
@@ -206,6 +210,11 @@ Models: gpt-3.5-turbo, gpt-4, gpt-4-turbo-preview
 - 🎛️ 主界面新增处理模式设置开关
 - 💾 文本处理模式设置持久化保存
 - 🔔 处理完成提示显示当前使用模式
+- 🐛 修复编译错误：补充MainActivity.showToast方法
+- 🔧 优化CI/CD签名配置，解决Release构建问题
+- 🔧 修复GitHub Actions版本号提取问题
+- 🎨 全新应用Logo设计（键盘+AI机器人）
+- 🐛 修复Release版本ProGuard混淆导致的崩溃问题
 
 **v2.1.0 (2025-06-25)**
 - 🎮 新增快捷操作栏
