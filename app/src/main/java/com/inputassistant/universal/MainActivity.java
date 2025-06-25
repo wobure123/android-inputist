@@ -237,6 +237,10 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
                 .show();
     }
 
+    private void showToast(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
