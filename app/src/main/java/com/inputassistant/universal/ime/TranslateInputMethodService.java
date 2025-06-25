@@ -35,7 +35,6 @@ public class TranslateInputMethodService extends InputMethodService {
     private TextView tvStatus;
     private String currentInputText = "";
     private String previousInputMethod = null; // 记录上一个输入法
-    private String lastInputMethod = ""; // 上一个输入法
 
     @Override
     public void onCreate() {
@@ -367,45 +366,5 @@ public class TranslateInputMethodService extends InputMethodService {
      */
     private void showToast(String message) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-    }
-
-    /**
-     * 切换到上一个输入法
-     */
-    private void switchToLastInputMethod() {
-        if (!TextUtils.isEmpty(lastInputMethod)) {
-            try {
-                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-                if (imm != null) {
-                    // 设置上一个输入法为当前输入法
-                    imm.setInputMethod(this.getWindow().getDecorView().getWindowToken(), lastInputMethod);
-                    Log.d(TAG, "Switched to last input method: " + lastInputMethod);
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "Error switching input method", e);
-            }
-        }
-    }
-
-    /**
-     * 记录当前输入法
-     */
-    private void recordCurrentInputMethod() {
-        try {
-            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-            if (imm != null) {
-                // 获取当前输入法组件
-                String currentInputMethod = Settings.Secure.getString(getContentResolver(), Settings.Secure.DEFAULT_INPUT_METHOD);
-                Log.d(TAG, "Current input method: " + currentInputMethod);
-                
-                // 如果与上一个输入法不同，则更新记录
-                if (!TextUtils.equals(currentInputMethod, lastInputMethod)) {
-                    lastInputMethod = currentInputMethod;
-                    Log.d(TAG, "Last input method updated: " + lastInputMethod);
-                }
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error recording current input method", e);
-        }
     }
 }
