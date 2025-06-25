@@ -215,6 +215,7 @@ Models: gpt-3.5-turbo, gpt-4, gpt-4-turbo-preview
 - 🔧 修复GitHub Actions版本号提取问题
 - 🎨 全新应用Logo设计（键盘+AI机器人）
 - 🐛 修复Release版本ProGuard混淆导致的崩溃问题
+- ⚡ 优化构建配置：禁用代码混淆，提升开发效率
 
 **v2.1.0 (2025-06-25)**
 - 🎮 新增快捷操作栏

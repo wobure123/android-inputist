@@ -56,8 +56,8 @@ android {
         }
         release {
             debuggable false                // 禁用调试功能
-            minifyEnabled true              // 启用代码压缩
-            shrinkResources true            // 移除未使用的资源
+            minifyEnabled false             // 禁用代码混淆（重要改动）
+            shrinkResources true            // 保留资源压缩，减小APK体积
             
             // 签名配置：检查是否有可用的release签名，否则使用debug签名
             def debugKeystore = file(System.getProperty('user.home') + '/.android/debug.keystore')
@@ -67,7 +67,8 @@ android {
                 signingConfig signingConfigs.debug
             }
             
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // 由于禁用了代码混淆，可以移除proguardFiles配置
+            // proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
     
