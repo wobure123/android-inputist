@@ -10,7 +10,6 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.inputassistant.universal.adapter.ActionAdapter;
 import com.inputassistant.universal.model.Action;
 import com.inputassistant.universal.repository.SettingsRepository;
@@ -32,7 +31,7 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
     private Button btnSaveApiSettings;
     private Button btnSetupIME;
     private RecyclerView rvActions;
-    private FloatingActionButton fabAddAction;
+    private Button fabAddAction;  // 改为 Button 类型
     private TextView tvStatus;
     
     private SettingsRepository settingsRepository;
