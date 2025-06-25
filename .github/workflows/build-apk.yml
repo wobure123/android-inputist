@@ -63,28 +63,46 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: release-apk
-        path: app/build/outputs/apk/release/app-release-unsigned.apk
+        path: app/build/outputs/apk/release/app-release.apk
         
+    - name: Get version from build.gradle
+      id: get_version
+      run: |
+        VERSION_NAME=$(grep "versionName" app/build.gradle | sed 's/.*"\(.*\)".*/\1/')
+        echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
+        echo "Version: $VERSION_NAME"
+    
     - name: Create Release
       if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
       uses: softprops/action-gh-release@v1
       with:
-        tag_name: v${{ github.run_number }}
-        name: Release v${{ github.run_number }}
+        tag_name: v${{ steps.get_version.outputs.version_name }}
+        name: Release v${{ steps.get_version.outputs.version_name }}
         body: |
-          自动构建的APK文件
+          🚀 Inputist v${{ steps.get_version.outputs.version_name }} - 智能输入法助手
           
-          ## 下载说明
-          - **app-debug.apk**: 调试版本，包含调试信息
-          - **app-release-unsigned.apk**: 发布版本（未签名）
+          ## ✨ 新功能
+          - 🔄 一键输入法切换器
+          - ✏️ 基础编辑功能（删除、空格、换行）
+          - 📱 改进的用户界面
+          - 🎯 优化的分割线样式 (======)
           
-          ## 安装方法
+          ## 📱 下载说明
+          - **app-debug.apk**: 调试版本，包含调试信息和后缀标识
+          - **app-release.apk**: 发布版本，代码优化和资源压缩
+          
+          ## 🔧 安装方法
           1. 下载APK文件到手机
           2. 在手机设置中允许安装未知来源应用
           3. 点击APK文件安装
+          
+          ## 💡 使用方法
+          1. 长按输入框 → 选择"Inputist"
+          2. 执行AI动作（翻译、润色等）
+          3. 点击"切换"按钮快速切换回原输入法
         files: |
           app/build/outputs/apk/debug/app-debug.apk
-          app/build/outputs/apk/release/app-release-unsigned.apk
+          app/build/outputs/apk/release/app-release.apk
         draft: false
         prerelease: false
       env:

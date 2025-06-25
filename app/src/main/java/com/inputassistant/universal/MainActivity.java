@@ -33,6 +33,8 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
     private RecyclerView rvActions;
     private Button fabAddAction;  // 改为 Button 类型
     private TextView tvStatus;
+    private Switch switchTextMode;  // 文本处理模式切换开关
+    private TextView tvModeDescription;  // 模式描述文本
     
     private SettingsRepository settingsRepository;
     private ActionAdapter actionAdapter;
@@ -59,6 +61,8 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
         rvActions = findViewById(R.id.rv_actions);
         fabAddAction = findViewById(R.id.fab_add_action);
         tvStatus = findViewById(R.id.tv_status);
+        switchTextMode = findViewById(R.id.switch_text_mode);
+        tvModeDescription = findViewById(R.id.tv_mode_description);
     }
 
     private void initRepository() {
@@ -82,6 +86,25 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
         etApiBaseUrl.setText(settingsRepository.getApiBaseUrl());
         etApiKey.setText(settingsRepository.getApiKey());
         etModelName.setText(settingsRepository.getModelName());
+        
+        // 初始化文本处理模式设置
+        initTextModeSettings();
+    }
+
+    private void initTextModeSettings() {
+        // 初始化开关状态
+        boolean isReplaceMode = settingsRepository.isReplaceMode();
+        switchTextMode.setChecked(isReplaceMode);
+        updateModeDescription();
+    }
+
+    private void updateModeDescription() {
+        boolean isReplaceMode = switchTextMode.isChecked();
+        if (isReplaceMode) {
+            tvModeDescription.setText("替换模式：仅保留AI回答，替换原文");
+        } else {
+            tvModeDescription.setText("拼接模式：原文 + 分割线 + AI回答");
+        }
     }
 
     private void loadActions() {
@@ -93,6 +116,13 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
         btnSaveApiSettings.setOnClickListener(v -> saveApiSettings());
         btnSetupIME.setOnClickListener(v -> openIMESettings());
         fabAddAction.setOnClickListener(v -> openActionEditor(null));
+        
+        // 文本处理模式切换监听
+        switchTextMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            settingsRepository.setTextProcessingMode(isChecked);
+            updateModeDescription();
+            showToast(isChecked ? "已切换到替换模式" : "已切换到拼接模式");
+        });
     }
 
     private void saveApiSettings() {

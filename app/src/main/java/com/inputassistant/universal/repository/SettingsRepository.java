@@ -25,6 +25,7 @@ public class SettingsRepository {
     private static final String KEY_MODEL_NAME = "model_name";
     private static final String KEY_ACTIONS_JSON = "actions_json";
     private static final String KEY_PREVIOUS_IME = "previous_ime"; // 保存上一个输入法
+    private static final String KEY_TEXT_MODE = "text_processing_mode"; // 文本处理模式
 
     private final SharedPreferences sharedPreferences;
     private final Gson gson;
@@ -115,6 +116,19 @@ public class SettingsRepository {
 
     public String getPreviousInputMethod() {
         return sharedPreferences.getString(KEY_PREVIOUS_IME, "");
+    }
+
+    // 文本处理模式相关方法
+    public void setTextProcessingMode(boolean isReplaceMode) {
+        sharedPreferences.edit().putBoolean(KEY_TEXT_MODE, isReplaceMode).apply();
+    }
+
+    public boolean isReplaceMode() {
+        return sharedPreferences.getBoolean(KEY_TEXT_MODE, false); // 默认为拼接模式(false)
+    }
+
+    public String getTextProcessingModeDescription() {
+        return isReplaceMode() ? "替换模式" : "拼接模式";
     }
 
     // 清除所有数据（用于重置或调试）

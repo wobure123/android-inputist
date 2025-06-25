@@ -242,14 +242,11 @@ public class TranslateInputMethodService extends InputMethodService {
             try {
                 showToast("✅ 处理完成！点击'切换'按钮可快速切换输入法");
                 
-                // 可选：自动隐藏输入法（用户可以通过切换按钮重新调出）
-                new android.os.Handler().postDelayed(() -> {
-                    try {
-                        requestHideSelf(0);
-                    } catch (Exception e) {
-                        Log.w(TAG, "Failed to hide input method", e);
-                    }
-                }, 2000); // 2秒后自动隐藏
+                // 移除自动隐藏功能，让用户自主选择何时切换
+                // 用户可以：
+                // 1. 点击"切换"按钮快速切换输入法
+                // 2. 继续使用基础编辑功能（删除、空格、换行）
+                // 3. 执行其他动作
                 
             } catch (Exception e) {
                 Log.w(TAG, "Failed to show completion dialog", e);
@@ -374,8 +371,17 @@ public class TranslateInputMethodService extends InputMethodService {
         InputConnection ic = getCurrentInputConnection();
         if (ic != null) {
             try {
-                // 构建最终文本：原文 + 分隔符 + 处理后文本
-                String finalText = currentInputText + "\n======\n" + processedText;
+                // 根据设置决定文本处理模式
+                boolean isReplaceMode = settingsRepository.isReplaceMode();
+                String finalText;
+                
+                if (isReplaceMode) {
+                    // 替换模式：仅保留AI回答
+                    finalText = processedText;
+                } else {
+                    // 拼接模式：原文 + 分隔符 + AI回答
+                    finalText = currentInputText + "\n======\n" + processedText;
+                }
                 
                 // 开始批量编辑以提高性能
                 ic.beginBatchEdit();
@@ -421,7 +427,10 @@ public class TranslateInputMethodService extends InputMethodService {
                 ic.endBatchEdit();
                 
                 Log.d(TAG, "Text updated successfully");
-                showToast("文本已更新");
+                
+                // 根据模式显示不同的提示信息
+                String mode = settingsRepository.isReplaceMode() ? "替换" : "拼接";
+                showToast("文本已更新（" + mode + "模式）");
             } catch (Exception e) {
                 Log.e(TAG, "Error updating text", e);
                 showToast("更新文本失败");
