@@ -1,4 +1,4 @@
-# 通用输入改写助手
+# 安卓通用输入改写助手
 ![Untitled video - Made with Clipchamp](https://github.com/user-attachments/assets/2296d932-fd2a-40b5-a9e7-cc30122c0b18)
 
 ![Screenshot_2025-06-26-13-50-01-046_com inputassistant universal-edit](https://github.com/user-attachments/assets/96fe905a-e48c-4c48-8d5a-34a5c38c3bb4)
