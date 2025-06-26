@@ -1,15 +1,5 @@
 # 通用输入改写助手
-
-
-### 6. 使用
-1. 在任何应用的输入框中输入文本
-2. 切换到"Inputist"输入法
-3. 点击相应的动作按钮
-4. 等待处理完成，文本将根据设置的模式更新输入法"按钮
-2. 在系统设置中启用"Inputist"
-3. 授予必要权限
-
-### 5. 创建动作
+![Untitled video - Made with Clipchamp](https://github.com/user-attachments/assets/2296d932-fd2a-40b5-a9e7-cc30122c0b18)
 
 一款Android输入法应用，集成大语言模型(LLM)进行文本智能处理。
 
