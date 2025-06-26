@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/floating_menu_background"
+    android:padding="8dp">
+
+    <!-- 快速切换按钮 -->
+    <Button
+        android:id="@+id/btn_switch_to_assistant"
+        android:layout_width="120dp"
+        android:layout_height="40dp"
+        android:text="切换输入法"
+        android:textSize="12sp"
+        android:background="@drawable/floating_menu_item_background"
+        android:textColor="@android:color/white"
+        android:layout_marginBottom="4dp" />
+
+    <!-- 快速动作按钮 -->
+    <Button
+        android:id="@+id/btn_quick_translate"
+        android:layout_width="120dp"
+        android:layout_height="40dp"
+        android:text="快速翻译"
+        android:textSize="12sp"
+        android:background="@drawable/floating_menu_item_background"
+        android:textColor="@android:color/white"
+        android:layout_marginBottom="4dp" />
+
+    <!-- 设置按钮 -->
+    <Button
+        android:id="@+id/btn_settings"
+        android:layout_width="120dp"
+        android:layout_height="40dp"
+        android:text="设置"
+        android:textSize="12sp"
+        android:background="@drawable/floating_menu_item_background"
+        android:textColor="@android:color/white" />
+
+</LinearLayout>

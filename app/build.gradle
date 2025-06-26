@@ -41,8 +41,8 @@ android {
         applicationId "com.inputassistant.universal"
         minSdk 24
         targetSdk 34
-        versionCode 3
-        versionName "2.2.0"  // 语义化版本号: 主版本.次版本.修订版本 - 新增文本处理模式功能
+        versionCode 4
+        versionName "2.3.0"  // 语义化版本号: 主版本.次版本.修订版本 - 新增智能悬浮球功能
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

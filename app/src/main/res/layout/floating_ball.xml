@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="56dp"
+    android:layout_height="56dp"
+    android:background="@drawable/floating_ball_background">
+
+    <!-- 悬浮球主体 -->
+    <ImageView
+        android:id="@+id/iv_floating_ball"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="center"
+        android:src="@drawable/ic_app_logo"
+        android:scaleType="fitCenter"
+        android:tint="@android:color/white" />
+    
+    <!-- 可选：添加提示文字 -->
+    <TextView
+        android:id="@+id/tv_floating_hint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal|bottom"
+        android:layout_marginBottom="2dp"
+        android:text="AI"
+        android:textColor="@android:color/white"
+        android:textSize="8sp"
+        android:visibility="gone" />
+
+</FrameLayout>

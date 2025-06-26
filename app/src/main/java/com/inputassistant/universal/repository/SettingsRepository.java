@@ -130,6 +130,15 @@ public class SettingsRepository {
     public String getTextProcessingModeDescription() {
         return isReplaceMode() ? "替换模式" : "拼接模式";
     }
+    
+    // 上一个输入法相关方法
+    public void savePreviousInputMethod(String inputMethodId) {
+        sharedPreferences.edit().putString(KEY_PREVIOUS_IME, inputMethodId).apply();
+    }
+    
+    public String getPreviousInputMethod() {
+        return sharedPreferences.getString(KEY_PREVIOUS_IME, null);
+    }
 
     // 清除所有数据（用于重置或调试）
     public void clearAll() {

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    
+    <!-- 渐变背景 -->
+    <gradient
+        android:startColor="#FF1976D2"
+        android:endColor="#FF2196F3"
+        android:angle="45" />
+    
+    <!-- 阴影效果 -->
+    <stroke
+        android:width="2dp"
+        android:color="#80000000" />
+    
+    <!-- 透明度 -->
+    <solid android:color="#E01976D2" />
+    
+</shape>

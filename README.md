@@ -11,9 +11,17 @@
 - **🎯 自定义动作流**: 支持用户创建个性化的文本处理动作
 - **🤖 LLM集成**: 兼容OpenAI标准的API，支持多种大语言模型
 - **⚡ 实时文本处理**: 在任何应用的输入框中一键处理文本
-- **� 双模式处理**: 支持拼接模式和替换模式，满足不同使用需求
-- **�🔒 安全存储**: API密钥使用Android EncryptedSharedPreferences加密存储
+- **🔄 双模式处理**: 支持拼接模式和替换模式，满足不同使用需求
+- **🎈 智能悬浮球**: 输入框激活时自动显示，快速切换输入法助手
+- **🔒 安全存储**: API密钥使用Android EncryptedSharedPreferences加密存储
 - **🌐 跨应用兼容**: 作为系统输入法，支持所有Android应用
+
+### 💫 悬浮球功能
+- **🎯 智能检测**: 点击输入框时自动显示悬浮球
+- **🚀 快速切换**: 一键切换到输入法助手
+- **🎨 拖拽体验**: 支持自由拖拽和磁性吸附
+- **⚡ 即用即隐**: 输入完成后自动隐藏
+- **🎛️ 快捷菜单**: 点击悬浮球显示操作选项
 
 ### 使用场景
 - **翻译**: 多语言文本翻译
@@ -44,15 +52,28 @@
 2. 在系统设置中启用"通用输入改写助手"
 3. 授予必要权限
 
-### 4. 创建动作
+### 5. 设置悬浮球（推荐）
+1. 点击"悬浮球设置"按钮
+2. 授予悬浮窗权限
+3. 悬浮球功能即可使用
+
+### 6. 创建动作
 1. 点击右下角的"+"按钮
 2. 输入动作名称（如"翻译成英文"）
 3. 输入系统指令（如"你是一个专业的翻译专家，请将用户输入的文本翻译成英文"）
 4. 保存动作
 
-### 5. 使用
+### 7. 使用方式
+
+#### 方式一：悬浮球模式（推荐）
+1. 在任意应用中点击输入框
+2. 悬浮球会自动显示
+3. 点击悬浮球快速切换到输入法助手
+4. 选择相应动作处理文本
+
+#### 方式二：传统模式
 1. 在任何应用的输入框中输入文本
-2. 切换到"通用输入改写助手"输入法
+2. 手动切换到"通用输入改写助手"输入法
 3. 点击相应的动作按钮
 4. 等待处理完成，文本将自动更新
 
@@ -68,15 +89,27 @@ app/
 │   ├── repository/SettingsRepository.java  # 数据存储仓库
 │   ├── api/GenericLLMApiClient.java   # 通用LLM API客户端
 │   ├── adapter/ActionAdapter.java     # 动作列表适配器
-│   └── ime/TranslateInputMethodService.java  # 输入法服务核心
+│   ├── ime/TranslateInputMethodService.java  # 输入法服务核心
+│   ├── floating/                      # 悬浮球功能模块
+│   │   ├── FloatingBallService.java   # 悬浮球服务
+│   │   ├── FloatingBallManager.java   # 悬浮球管理器
+│   │   ├── FloatingBallView.java      # 悬浮球视图
+│   │   └── FloatingMenuView.java      # 悬浮菜单视图
+│   └── utils/                         # 工具类
+│       ├── PermissionHelper.java      # 权限管理工具
+│       └── InputMethodHelper.java     # 输入法切换工具
 └── src/main/res/
     ├── layout/                        # 布局文件
+    │   ├── floating_ball.xml          # 悬浮球布局
+    │   └── floating_menu.xml          # 悬浮菜单布局
+    ├── drawable/                      # 悬浮球样式资源
     ├── values/                        # 资源文件
     └── xml/method.xml                 # 输入法配置
 ```
 
 ### 核心技术
 - **Android Input Method Framework**: 系统级输入法实现
+- **Android WindowManager**: 悬浮窗管理
 - **EncryptedSharedPreferences**: 安全的本地数据存储
 - **OkHttp3**: 网络请求处理
 - **Gson**: JSON数据序列化
@@ -130,6 +163,7 @@ Models: gpt-3.5-turbo, gpt-4, gpt-4-turbo-preview
 - **ACCESS_NETWORK_STATE**: 检查网络状态
 - **BIND_INPUT_METHOD**: 注册为系统输入法
 - **FOREGROUND_SERVICE**: 后台运行输入法服务
+- **SYSTEM_ALERT_WINDOW**: 显示悬浮球（可选）
 
 ## 📝 使用示例
 
@@ -186,7 +220,18 @@ Models: gpt-3.5-turbo, gpt-4, gpt-4-turbo-preview
 - [x] CI/CD签名配置优化
 - [x] 全新应用Logo设计（键盘+AI机器人）
 - [x] Release版本ProGuard混淆问题修复
+- [x] 🎈 智能悬浮球功能
+  - [x] 输入框自动检测和悬浮球显示
+  - [x] 拖拽和磁性吸附
+  - [x] 快速切换输入法
+  - [x] 悬浮菜单和快捷操作
+  - [x] 权限管理和用户引导
+  
 ### 🔄 待优化功能
+- [ ] 悬浮球功能优化
+  - [ ] 快速翻译功能实现
+  - [ ] 悬浮球样式个性化
+  - [ ] 智能位置记忆优化
 - [ ] 错误处理优化
 - [ ] 用户体验改进
 - [ ] 性能优化
@@ -194,6 +239,24 @@ Models: gpt-3.5-turbo, gpt-4, gpt-4-turbo-preview
 - [ ] 更多预设动作模板
 
 ### 📈 更新日志
+
+**v2.3.0 (2025-06-27)**
+- 🎈 **新增智能悬浮球功能**
+  - ⚡ 输入框激活时自动显示悬浮球
+  - 🚀 一键快速切换到输入法助手
+  - 🎨 支持拖拽移动和磁性吸附到屏幕边缘
+  - 🎛️ 点击悬浮球显示快捷菜单
+  - 🔒 智能权限管理和用户引导
+  - 💾 位置记忆功能，记住用户习惯位置
+- 🛠️ 技术架构优化
+  - 🎯 基于InputMethodService生命周期的轻量级实现
+  - 🔧 无需辅助功能权限，仅需悬浮窗权限
+  - ⚡ 极低资源消耗，按需启动
+- 🎨 新增悬浮球相关UI组件
+  - 🎈 FloatingBallView - 悬浮球视图
+  - 📋 FloatingMenuView - 快捷菜单
+  - 🎛️ FloatingBallManager - 悬浮球管理器
+  - 🛠️ PermissionHelper - 权限管理工具
 
 **v2.2.0 (2025-06-25)**
 - ✨ 新增双模式文本处理功能

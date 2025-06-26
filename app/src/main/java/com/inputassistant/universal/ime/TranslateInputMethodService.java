@@ -1,7 +1,42 @@
 package com.inputassistant.universal.ime;
 
-import android.content.Context;
+import android.content.ComponentName;
+import android.content.Co    @Override
+    public void onStartInput(EditorInfo attribute, boolean restarting) {
+        super.onStartInput(attribute, restarting);
+        Log.d(TAG, "Starting input, restarting=" + restarting);
+        
+        // 🎯 显示悬浮球
+        showFloatingBall();
+        
+        // 获取当前输入框的文本
+        captureCurrentText();
+    }
+
+    @Override
+    public void onStartInputView(EditorInfo info, boolean restarting) {
+        super.onStartInputView(info, restarting);
+        Log.d(TAG, "Starting input view");
+        
+        // 记录当前的默认输入法（在切换到我们的输入法之前）
+        recordPreviousInputMethod();
+        
+        // 每次显示时刷新文本
+        captureCurrentText();
+        updateStatusDisplay();
+    }
+    
+    @Override
+    public void onFinishInput() {
+        super.onFinishInput();
+        Log.d(TAG, "Finishing input");
+        
+        // 🎯 隐藏悬浮球
+        hideFloatingBall();
+    } android.content.Intent;
+import android.content.ServiceConnection;
 import android.inputmethodservice.InputMethodService;
+import android.os.IBinder;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
@@ -15,8 +50,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 import com.inputassistant.universal.R;
 import com.inputassistant.universal.api.GenericLLMApiClient;
+import com.inputassistant.universal.floating.FloatingBallService;
 import com.inputassistant.universal.model.Action;
 import com.inputassistant.universal.repository.SettingsRepository;
+import com.inputassistant.universal.utils.PermissionHelper;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -35,6 +72,29 @@ public class TranslateInputMethodService extends InputMethodService {
     private TextView tvStatus;
     private String currentInputText = "";
     private String previousInputMethod = null; // 记录上一个输入法
+    
+    // 悬浮球服务相关
+    private FloatingBallService floatingBallService;
+    private boolean isFloatingBallServiceBound = false;
+    
+    // 服务连接
+    private ServiceConnection floatingBallConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            FloatingBallService.FloatingBallBinder binder = 
+                (FloatingBallService.FloatingBallBinder) service;
+            floatingBallService = binder.getService();
+            isFloatingBallServiceBound = true;
+            Log.d(TAG, "FloatingBallService connected");
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            floatingBallService = null;
+            isFloatingBallServiceBound = false;
+            Log.d(TAG, "FloatingBallService disconnected");
+        }
+    };
 
     @Override
     public void onCreate() {
@@ -47,6 +107,9 @@ public class TranslateInputMethodService extends InputMethodService {
         } catch (GeneralSecurityException | IOException e) {
             Log.e(TAG, "Failed to initialize SettingsRepository", e);
         }
+        
+        // 初始化悬浮球服务
+        initFloatingBallService();
     }
 
     @Override
@@ -469,5 +532,70 @@ public class TranslateInputMethodService extends InputMethodService {
      */
     private void showToast(String message) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+    
+    /**
+     * 初始化悬浮球服务
+     */
+    private void initFloatingBallService() {
+        // 检查权限
+        if (!PermissionHelper.hasOverlayPermission(this)) {
+            Log.w(TAG, "No overlay permission, skipping floating ball service");
+            return;
+        }
+        
+        try {
+            // 启动并绑定悬浮球服务
+            Intent intent = new Intent(this, FloatingBallService.class);
+            startService(intent);
+            bindService(intent, floatingBallConnection, Context.BIND_AUTO_CREATE);
+            Log.d(TAG, "FloatingBallService started and bound");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to start FloatingBallService", e);
+        }
+    }
+    
+    /**
+     * 显示悬浮球
+     */
+    private void showFloatingBall() {
+        if (isFloatingBallServiceBound && floatingBallService != null) {
+            floatingBallService.showFloatingBall();
+            Log.d(TAG, "Floating ball shown");
+        }
+    }
+    
+    /**
+     * 隐藏悬浮球
+     */
+    private void hideFloatingBall() {
+        if (isFloatingBallServiceBound && floatingBallService != null) {
+            floatingBallService.hideFloatingBall();
+            Log.d(TAG, "Floating ball hidden");
+        }
+    }
+    
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Log.d(TAG, "InputMethod Service destroyed");
+        
+        // 清理悬浮球服务
+        if (isFloatingBallServiceBound) {
+            try {
+                unbindService(floatingBallConnection);
+                isFloatingBallServiceBound = false;
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to unbind FloatingBallService", e);
+            }
+        }
+        
+        // 停止悬浮球服务
+        try {
+            Intent intent = new Intent(this, FloatingBallService.class);
+            stopService(intent);
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to stop FloatingBallService", e);
+        }
     }
 }

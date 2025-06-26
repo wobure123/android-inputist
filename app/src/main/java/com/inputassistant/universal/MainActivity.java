@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.inputassistant.universal.adapter.ActionAdapter;
 import com.inputassistant.universal.model.Action;
 import com.inputassistant.universal.repository.SettingsRepository;
+import com.inputassistant.universal.utils.PermissionHelper;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -30,6 +31,7 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
     private EditText etModelName;
     private Button btnSaveApiSettings;
     private Button btnSetupIME;
+    private Button btnFloatingBallSettings;  // 悬浮球设置按钮
     private RecyclerView rvActions;
     private Button fabAddAction;  // 改为 Button 类型
     private TextView tvStatus;
@@ -58,6 +60,7 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
         etModelName = findViewById(R.id.et_model_name);
         btnSaveApiSettings = findViewById(R.id.btn_save_api_settings);
         btnSetupIME = findViewById(R.id.btn_setup_ime);
+        btnFloatingBallSettings = findViewById(R.id.btn_floating_ball_settings);
         rvActions = findViewById(R.id.rv_actions);
         fabAddAction = findViewById(R.id.fab_add_action);
         tvStatus = findViewById(R.id.tv_status);
@@ -115,6 +118,7 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
     private void setupClickListeners() {
         btnSaveApiSettings.setOnClickListener(v -> saveApiSettings());
         btnSetupIME.setOnClickListener(v -> openIMESettings());
+        btnFloatingBallSettings.setOnClickListener(v -> openFloatingBallSettings());
         fabAddAction.setOnClickListener(v -> openActionEditor(null));
         
         // 文本处理模式切换监听
@@ -239,6 +243,66 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
 
     private void showToast(String message) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+    
+    /**
+     * 打开悬浮球设置
+     */
+    private void openFloatingBallSettings() {
+        // 检查悬浮窗权限
+        PermissionHelper.checkAndRequestPermissions(this, new PermissionHelper.PermissionCallback() {
+            @Override
+            public void onPermissionGranted() {
+                showFloatingBallSettingsDialog();
+            }
+
+            @Override
+            public void onPermissionDenied() {
+                // 权限被拒绝，显示说明对话框
+                showFloatingBallPermissionDialog();
+            }
+        });
+    }
+    
+    /**
+     * 显示悬浮球设置对话框
+     */
+    private void showFloatingBallSettingsDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("悬浮球功能")
+                .setMessage("悬浮球功能已启用！\n\n" +
+                           "🎯 功能说明：\n" +
+                           "• 点击任意输入框时自动显示悬浮球\n" +
+                           "• 点击悬浮球快速切换到输入法助手\n" +
+                           "• 输入完成后悬浮球自动隐藏\n" +
+                           "• 支持拖拽和磁性吸附\n\n" +
+                           "✨ 使用提示：\n" +
+                           "1. 在任意应用中点击输入框\n" +
+                           "2. 悬浮球会自动出现\n" +
+                           "3. 点击悬浮球即可快速切换输入法")
+                .setPositiveButton("我知道了", null)
+                .setNegativeButton("权限设置", (dialog, which) -> {
+                    PermissionHelper.openOverlaySettings(this);
+                })
+                .show();
+    }
+    
+    /**
+     * 显示悬浮球权限说明对话框
+     */
+    private void showFloatingBallPermissionDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("需要悬浮窗权限")
+                .setMessage("悬浮球功能需要悬浮窗权限才能正常工作。\n\n" +
+                           "开启权限后，您就可以：\n" +
+                           "• 在任意应用中快速调用输入法助手\n" +
+                           "• 享受更便捷的文本处理体验\n\n" +
+                           "请点击\"去设置\"开启权限。")
+                .setPositiveButton("去设置", (dialog, which) -> {
+                    PermissionHelper.openOverlaySettings(this);
+                })
+                .setNegativeButton("取消", null)
+                .show();
     }
 
     @Override
