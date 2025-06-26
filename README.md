@@ -1,6 +1,8 @@
 # 通用输入改写助手
 ![Untitled video - Made with Clipchamp](https://github.com/user-attachments/assets/2296d932-fd2a-40b5-a9e7-cc30122c0b18)
 
+![Screenshot_2025-06-26-13-50-01-046_com inputassistant universal-edit](https://github.com/user-attachments/assets/96fe905a-e48c-4c48-8d5a-34a5c38c3bb4)
+
 一款Android输入法应用，集成大语言模型(LLM)进行文本智能处理。
 
 ## 📱 功能特性
