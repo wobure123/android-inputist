@@ -19,6 +19,13 @@ import com.inputassistant.universal.utils.PermissionHelper;
 public class FloatingBallManager {
     private static final String TAG = "FloatingBallManager";
     
+    /**
+     * 悬浮球点击监听器接口
+     */
+    public interface OnFloatingBallClickListener {
+        void onFloatingBallClick();
+    }
+    
     private Context context;
     private WindowManager windowManager;
     private FloatingBallView floatingBallView;
@@ -29,6 +36,9 @@ public class FloatingBallManager {
     
     private boolean isShowing = false;
     private boolean isMenuShowing = false;
+    
+    // 点击监听器
+    private OnFloatingBallClickListener clickListener;
     
     // 位置记忆
     private SharedPreferences positionPrefs;
@@ -352,6 +362,22 @@ public class FloatingBallManager {
      */
     public boolean isMenuShowing() {
         return isMenuShowing;
+    }
+    
+    /**
+     * 设置悬浮球点击监听器
+     */
+    public void setOnFloatingBallClickListener(OnFloatingBallClickListener listener) {
+        this.clickListener = listener;
+    }
+    
+    /**
+     * 触发悬浮球点击事件
+     */
+    public void onFloatingBallClicked() {
+        if (clickListener != null) {
+            clickListener.onFloatingBallClick();
+        }
     }
     
     /**

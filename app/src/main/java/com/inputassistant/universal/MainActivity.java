@@ -17,10 +17,10 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.inputassistant.universal.adapter.ActionAdapter;
 import com.inputassistant.universal.floating.FloatingBallService;
+import com.inputassistant.universal.floating.KeyboardAwareFloatingBallService;
 import com.inputassistant.universal.model.Action;
 import com.inputassistant.universal.repository.SettingsRepository;
 import com.inputassistant.universal.utils.PermissionHelper;
-import com.inputassistant.universal.utils.AccessibilityHelper;
 import com.inputassistant.universal.utils.InputMethodHelper;
 
 import java.io.IOException;
@@ -52,7 +52,6 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
     
     // 权限状态跟踪，避免重复提示
     private boolean lastOverlayPermissionState = false;
-    private boolean lastAccessibilityPermissionState = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -275,13 +274,7 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
             return;
         }
         
-        // 检查辅助功能权限
-        if (!AccessibilityHelper.isOurAccessibilityServiceEnabled(this)) {
-            showAccessibilityPermissionDialog();
-            return;
-        }
-        
-        // 权限都已获得，显示功能设置对话框
+        // 权限已获得，显示功能设置对话框
         showFloatingBallSettingsDialog();
     }
     
@@ -328,12 +321,10 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
      */
     private void showPermissionManagementDialog() {
         boolean hasOverlay = PermissionHelper.hasOverlayPermission(this);
-        boolean hasAccessibility = AccessibilityHelper.isOurAccessibilityServiceEnabled(this);
         
         String message = "权限状态检查：\n\n" +
-                        "🔑 悬浮窗权限：" + (hasOverlay ? "✅ 已授予" : "❌ 未授予") + "\n" +
-                        "🔑 辅助功能权限：" + (hasAccessibility ? "✅ 已启用" : "❌ 未启用") + "\n\n" +
-                        "悬浮球功能需要两个权限都启用才能正常工作。\n\n" +
+                        "🔑 悬浮窗权限：" + (hasOverlay ? "✅ 已授予" : "❌ 未授予") + "\n\n" +
+                        "悬浮球功能只需要悬浮窗权限即可正常工作。\n\n" +
                         "💡 提示：开启权限后返回应用会自动检测并提示成功。";
         
         AlertDialog.Builder builder = new AlertDialog.Builder(this)
@@ -344,36 +335,11 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
             builder.setPositiveButton("设置悬浮窗权限", (dialog, which) -> {
                 PermissionHelper.openOverlaySettings(this);
             });
-        }
-        
-        if (!hasAccessibility) {
-            builder.setNeutralButton("设置辅助功能", (dialog, which) -> {
-                AccessibilityHelper.openAccessibilitySettings(this);
-            });
+        } else {
+            builder.setPositiveButton("确定", null);
         }
         
         builder.setNegativeButton("取消", null).show();
-    }
-    
-    /**
-     * 显示辅助功能权限说明对话框
-     */
-    private void showAccessibilityPermissionDialog() {
-        new AlertDialog.Builder(this)
-                .setTitle("需要辅助功能权限")
-                .setMessage("悬浮球功能需要辅助功能权限来检测全局输入框状态。\n\n" +
-                           "✨ 开启后，您就可以：\n" +
-                           "• 在任何应用中自动检测输入框\n" +
-                           "• 享受智能悬浮球便捷体验\n" +
-                           "• 无需手动切换输入法\n\n" +
-                           "🔒 隐私说明：\n" +
-                           "我们只检测输入框状态，不收集任何输入内容。\n\n" +
-                           "💡 操作提示：开启后返回应用会自动检测并提示成功。")
-                .setPositiveButton("去设置", (dialog, which) -> {
-                    AccessibilityHelper.openAccessibilitySettings(this);
-                })
-                .setNegativeButton("取消", null)
-                .show();
     }
     
     /**
@@ -408,23 +374,14 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
      */
     private void checkPermissionStatusAndNotify() {
         boolean hasOverlay = PermissionHelper.hasOverlayPermission(this);
-        boolean hasAccessibility = AccessibilityHelper.isOurAccessibilityServiceEnabled(this);
         
         // 检查悬浮窗权限是否刚刚获得
         if (hasOverlay && !lastOverlayPermissionState) {
             showToast("✅ 悬浮窗权限已授予");
-        }
-        
-        // 检查辅助功能权限是否刚刚获得
-        if (hasAccessibility && !lastAccessibilityPermissionState) {
-            showToast("✅ 辅助功能权限已启用");
-        }
-        
-        // 检查是否两个权限都刚刚配置完成
-        if (hasOverlay && hasAccessibility && (!lastOverlayPermissionState || !lastAccessibilityPermissionState)) {
+            
             boolean isFloatingBallEnabled = settingsRepository.isFloatingBallEnabled();
             if (!isFloatingBallEnabled) {
-                // 权限都有了，但功能未启用，延迟显示对话框避免与toast冲突
+                // 权限有了，但功能未启用，延迟显示对话框避免与toast冲突
                 postDelayed(() -> showPermissionSuccessDialog(), 1000);
             } else {
                 // 一切就绪
@@ -432,9 +389,8 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
             }
         }
         
-        // 更新权限状态
+        // 更新权限状态  
         lastOverlayPermissionState = hasOverlay;
-        lastAccessibilityPermissionState = hasAccessibility;
     }
     
     /**
@@ -450,9 +406,8 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
     private void showPermissionSuccessDialog() {
         new AlertDialog.Builder(this)
                 .setTitle("🎉 权限配置完成")
-                .setMessage("恭喜！所有必要权限都已配置完成：\n\n" +
-                           "✅ 悬浮窗权限：已授予\n" +
-                           "✅ 辅助功能权限：已启用\n\n" +
+                .setMessage("恭喜！悬浮窗权限已配置完成：\n\n" +
+                           "✅ 悬浮窗权限：已授予\n\n" +
                            "现在可以启用悬浮球功能了！")
                 .setPositiveButton("启用悬浮球", (dialog, which) -> {
                     settingsRepository.setFloatingBallEnabled(true);
@@ -484,7 +439,6 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
      */
     private void initPermissionStates() {
         lastOverlayPermissionState = PermissionHelper.hasOverlayPermission(this);
-        lastAccessibilityPermissionState = AccessibilityHelper.isOurAccessibilityServiceEnabled(this);
     }
     
     /**
@@ -492,26 +446,24 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
      */
     private void testFloatingBall() {
         boolean hasOverlay = PermissionHelper.hasOverlayPermission(this);
-        boolean hasAccessibility = AccessibilityHelper.isOurAccessibilityServiceEnabled(this);
         boolean isEnabled = settingsRepository.isFloatingBallEnabled();
         
         StringBuilder result = new StringBuilder();
         result.append("🔍 悬浮球功能测试结果：\n\n");
         result.append("🔑 悬浮窗权限：").append(hasOverlay ? "✅ 已授予" : "❌ 未授予").append("\n");
-        result.append("🔑 辅助功能权限：").append(hasAccessibility ? "✅ 已启用" : "❌ 未启用").append("\n");
         result.append("🎈 悬浮球功能：").append(isEnabled ? "✅ 已启用" : "❌ 已禁用").append("\n\n");
         
-        if (hasOverlay && hasAccessibility && isEnabled) {
+        if (hasOverlay && isEnabled) {
             result.append("🎉 所有条件都满足！\n");
             result.append("请到其他应用中点击输入框测试。");
             
-            // 启动悬浮球服务进行测试
+            // 启动新的键盘感知悬浮球服务进行测试
             try {
-                Intent serviceIntent = new Intent(this, com.inputassistant.universal.floating.FloatingBallService.class);
+                Intent serviceIntent = new Intent(this, KeyboardAwareFloatingBallService.class);
                 startService(serviceIntent);
-                result.append("\n\n✅ 悬浮球服务已启动");
+                result.append("\n\n✅ 键盘感知悬浮球服务已启动");
                 result.append("\n💡 现在可以到其他应用测试输入框检测");
-                result.append("\n🔍 查看日志：adb logcat -s GlobalInputDetectionService");
+                result.append("\n🔍 查看日志：adb logcat -s KeyboardAwareFloatingBallService");
             } catch (Exception e) {
                 result.append("\n\n⚠️ 启动服务失败：").append(e.getMessage());
             }
@@ -538,60 +490,16 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
         }
         
         try {
-            // 直接启动悬浮球服务并显示
-            Intent serviceIntent = new Intent(this, com.inputassistant.universal.floating.FloatingBallService.class);
+            // 直接启动新的键盘感知悬浮球服务
+            Intent serviceIntent = new Intent(this, KeyboardAwareFloatingBallService.class);
             startService(serviceIntent);
             
-            // 延迟一点后尝试绑定服务并显示悬浮球
-            postDelayed(() -> {
-                bindFloatingBallForTest();
-            }, 1000);
-            
-            showToast("🎈 正在强制显示悬浮球...");
+            showToast("🎈 键盘感知悬浮球服务已启动，请到其他应用测试输入框");
             
         } catch (Exception e) {
-            showToast("❌ 强制显示失败：" + e.getMessage());
+            showToast("❌ 启动服务失败：" + e.getMessage());
             Log.e("MainActivity", "Force show floating ball failed", e);
         }
-    }
-    
-    /**
-     * 绑定悬浮球服务进行测试
-     */
-    private void bindFloatingBallForTest() {
-        Intent serviceIntent = new Intent(this, com.inputassistant.universal.floating.FloatingBallService.class);
-        bindService(serviceIntent, new android.content.ServiceConnection() {
-            @Override
-            public void onServiceConnected(android.content.ComponentName name, android.os.IBinder service) {
-                try {
-                    com.inputassistant.universal.floating.FloatingBallService.FloatingBallBinder binder = 
-                        (com.inputassistant.universal.floating.FloatingBallService.FloatingBallBinder) service;
-                    com.inputassistant.universal.floating.FloatingBallService floatingBallService = binder.getService();
-                    
-                    // 强制显示悬浮球
-                    floatingBallService.showFloatingBall();
-                    showToast("✅ 悬浮球已强制显示");
-                    
-                    // 延迟后解绑服务
-                    postDelayed(() -> {
-                        try {
-                            unbindService(this);
-                        } catch (Exception e) {
-                            Log.w("MainActivity", "Unbind service failed", e);
-                        }
-                    }, 1000);
-                    
-                } catch (Exception e) {
-                    showToast("❌ 显示悬浮球失败：" + e.getMessage());
-                    Log.e("MainActivity", "Show floating ball failed", e);
-                }
-            }
-
-            @Override
-            public void onServiceDisconnected(android.content.ComponentName name) {
-                Log.d("MainActivity", "FloatingBallService disconnected");
-            }
-        }, Context.BIND_AUTO_CREATE);
     }
     
     /**
@@ -603,44 +511,34 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
         
         // 检查权限
         boolean hasOverlay = PermissionHelper.hasOverlayPermission(this);
-        boolean hasAccessibility = AccessibilityHelper.isOurAccessibilityServiceEnabled(this);
         boolean isEnabled = settingsRepository.isFloatingBallEnabled();
         
         status.append("🔑 悬浮窗权限：").append(hasOverlay ? "✅ 已授予" : "❌ 未授予").append("\n");
-        status.append("🔑 辅助功能权限：").append(hasAccessibility ? "✅ 已启用" : "❌ 未启用").append("\n");
         status.append("🎈 悬浮球功能：").append(isEnabled ? "✅ 已启用" : "❌ 已禁用").append("\n\n");
         
         // 检查服务运行状态
         android.app.ActivityManager am = (android.app.ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-        boolean globalServiceRunning = false;
-        boolean floatingServiceRunning = false;
+        boolean keyboardAwareServiceRunning = false;
         
         for (android.app.ActivityManager.RunningServiceInfo service : am.getRunningServices(Integer.MAX_VALUE)) {
-            if (service.service.getClassName().contains("GlobalInputDetectionService")) {
-                globalServiceRunning = true;
-            }
-            if (service.service.getClassName().contains("FloatingBallService")) {
-                floatingServiceRunning = true;
+            if (service.service.getClassName().contains("KeyboardAwareFloatingBallService")) {
+                keyboardAwareServiceRunning = true;
             }
         }
         
         status.append("🔧 服务运行状态：\n");
-        status.append("  • GlobalInputDetectionService：").append(globalServiceRunning ? "✅ 运行中" : "❌ 未运行").append("\n");
-        status.append("  • FloatingBallService：").append(floatingServiceRunning ? "✅ 运行中" : "❌ 未运行").append("\n\n");
+        status.append("  • KeyboardAwareFloatingBallService：").append(keyboardAwareServiceRunning ? "✅ 运行中" : "❌ 未运行").append("\n\n");
         
         // 建议修复步骤
         status.append("🛠️ 修复建议：\n");
         if (!hasOverlay) {
             status.append("1. 请授予悬浮窗权限\n");
         }
-        if (!hasAccessibility) {
-            status.append("2. 请启用辅助功能权限\n");
-        }
         if (!isEnabled) {
-            status.append("3. 请启用悬浮球功能\n");
+            status.append("2. 请启用悬浮球功能\n");
         }
-        if (!globalServiceRunning && hasAccessibility) {
-            status.append("4. 辅助功能服务未运行，请重启应用或重新启用辅助功能\n");
+        if (!keyboardAwareServiceRunning && hasOverlay && isEnabled) {
+            status.append("3. 键盘感知服务未运行，请重启应用或重新启动服务\n");
         }
         
         new androidx.appcompat.app.AlertDialog.Builder(this)
@@ -661,15 +559,18 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
      */
     private void restartFloatingBallServices() {
         try {
-            // 停止悬浮球服务
-            Intent floatingIntent = new Intent(this, com.inputassistant.universal.floating.FloatingBallService.class);
-            stopService(floatingIntent);
+            // 停止旧的服务
+            Intent oldServiceIntent = new Intent(this, com.inputassistant.universal.floating.FloatingBallService.class);
+            stopService(oldServiceIntent);
+            
+            // 启动新的键盘感知服务
+            Intent newServiceIntent = new Intent(this, KeyboardAwareFloatingBallService.class);
             
             // 延迟后重新启动
             postDelayed(() -> {
                 if (settingsRepository.isFloatingBallEnabled()) {
-                    startService(floatingIntent);
-                    showToast("✅ 服务已重启");
+                    startService(newServiceIntent);
+                    showToast("✅ 键盘感知悬浮球服务已重启");
                 }
             }, 1000);
             

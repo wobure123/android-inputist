@@ -260,6 +260,18 @@ public class FloatingBallView extends FrameLayout {
         updateStatusDisplay();
     }
     
+    @Override
+    public boolean performClick() {
+        super.performClick();
+        
+        // 通知管理器处理点击事件
+        if (manager != null) {
+            manager.onFloatingBallClicked();
+        }
+        
+        return true;
+    }
+    
     /**
      * 更新悬浮球状态显示
      */
