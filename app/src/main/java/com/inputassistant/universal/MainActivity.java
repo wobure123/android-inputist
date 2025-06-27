@@ -535,17 +535,25 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
                         (KeyboardAwareFloatingBallService.KeyboardAwareBinder) service;
                     KeyboardAwareFloatingBallService keyboardService = binder.getService();
                     
-                    // 获取服务状态并显示
+                    // 获取增强的调试信息
                     String status = keyboardService.getServiceStatus();
+                    String enhancedDebug = keyboardService.getEnhancedDebugInfo();
+                    
                     Log.d("MainActivity", "Service status:\n" + status);
+                    Log.d("MainActivity", "Enhanced debug:\n" + enhancedDebug);
                     
                     // 强制显示悬浮球进行测试
                     keyboardService.forceShowFloatingBall();
                     
-                    // 显示诊断信息
+                    // 显示合并的诊断信息
                     new AlertDialog.Builder(MainActivity.this)
                             .setTitle("🔍 服务诊断信息")
-                            .setMessage(status + "\n\n💡 如果悬浮球仍未出现，请查看 Logcat 日志获取详细错误信息。")
+                            .setMessage(status + "\n" + enhancedDebug + 
+                                       "\n\n💡 增强检测说明：\n" +
+                                       "• 小米设备使用连续性检测算法\n" +
+                                       "• 需要连续3次检测确认状态变化\n" +
+                                       "• 结合WindowInsets和IMM多信号融合\n" +
+                                       "• 查看Logcat获取详细检测过程")
                             .setPositiveButton("确定", null)
                             .show();
                     

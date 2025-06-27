@@ -58,7 +58,15 @@ public class KeyboardAwareFloatingBallService extends Service {
     
     // 输入活动检测
     private long lastInputActivityTime = 0;
-    private static final long INPUT_ACTIVITY_TIMEOUT = 10000; // 10秒
+    private static final long INPUT_ACTIVITY_TIMEOUT = 5000; // 5秒
+    
+    // 小米设备专用检测状态
+    private boolean lastXiaomiKeyboardState = false;
+    private long lastXiaomiStateChangeTime = 0;
+    private static final long XIAOMI_STATE_STABLE_DURATION = 3000; // 3秒状态稳定期
+    private int consecutiveActiveCount = 0;
+    private int consecutiveInactiveCount = 0;
+    private static final int XIAOMI_CONFIDENCE_THRESHOLD = 3; // 连续3次检测确认状态变化
     
     // Binder类，用于与其他组件通信
     public class KeyboardAwareBinder extends Binder {
@@ -132,6 +140,12 @@ public class KeyboardAwareFloatingBallService extends Service {
         
         // 获取当前输入法
         updateCurrentInputMethod();
+        
+        // 重置小米设备检测状态
+        if (isXiaomiDevice()) {
+            resetXiaomiDetectionState();
+            Log.d(TAG, "Xiaomi detection state reset");
+        }
     }
 
     @Override
@@ -563,9 +577,11 @@ public class KeyboardAwareFloatingBallService extends Service {
                 try {
                     checkKeyboardStateByInputMethodManager();
                     
-                    // 每2秒检查一次
+                    // 小米设备更频繁检查以提高响应性，其他设备保持2秒
+                    long checkInterval = isXiaomiDevice() ? 1500 : 2000; // 小米1.5秒，其他2秒
+                    
                     if (isPeriodicCheckRunning) {
-                        periodicHandler.postDelayed(this, 2000);
+                        periodicHandler.postDelayed(this, checkInterval);
                     }
                 } catch (Exception e) {
                     Log.e(TAG, "Error in periodic keyboard check", e);
@@ -573,7 +589,9 @@ public class KeyboardAwareFloatingBallService extends Service {
             }
         };
         
-        periodicHandler.postDelayed(periodicCheckRunnable, 2000);
+        // 初始延迟启动
+        long initialDelay = isXiaomiDevice() ? 1000 : 2000;
+        periodicHandler.postDelayed(periodicCheckRunnable, initialDelay);
     }
     
     /**
@@ -604,43 +622,111 @@ public class KeyboardAwareFloatingBallService extends Service {
                 // 如果输入法发生变化，记录日志
                 if (!currentInputMethod.equals(previousIME)) {
                     Log.d(TAG, "Periodic check - IME changed from " + previousIME + " to " + currentInputMethod);
+                    // 输入法变化时重置计数器
+                    consecutiveActiveCount = 0;
+                    consecutiveInactiveCount = 0;
                 }
                 
-                // 修正的检测逻辑：只在软键盘真正弹出时显示悬浮球
+                // 优化的检测逻辑：结合多种信号判断软键盘状态
                 boolean shouldShow = false;
                 
                 // 如果不是Inputist输入法
                 if (!isInputistIME(currentInputMethod)) {
-                    // 对于小米设备，使用更严格的检测：
-                    // 1. 必须是第三方输入法
-                    // 2. 必须有实际的输入活动（通过isActive检测）
-                    if (Build.MANUFACTURER.toLowerCase().contains("xiaomi") || 
-                        Build.MANUFACTURER.toLowerCase().contains("redmi")) {
-                        
-                        // 小米设备：第三方输入法 + 有输入活动
-                        shouldShow = isCommonThirdPartyIME(currentInputMethod) && 
-                                   (isActive || hasRecentInputActivity());
-                        
-                        Log.v(TAG, "Xiaomi device - IME: " + currentInputMethod + 
-                                  ", isCommonThirdParty: " + isCommonThirdPartyIME(currentInputMethod) +
+                    
+                    // 对于小米设备，使用增强的多信号检测
+                    if (isXiaomiDevice()) {
+                        shouldShow = detectXiaomiKeyboardState(isActive);
+                        Log.v(TAG, "Xiaomi enhanced detection - IME: " + currentInputMethod + 
                                   ", isActive: " + isActive +
+                                  ", consecutiveActive: " + consecutiveActiveCount +
+                                  ", consecutiveInactive: " + consecutiveInactiveCount +
                                   ", shouldShow: " + shouldShow);
                     } else {
-                        // 其他设备使用标准检测
-                        shouldShow = isActive;
-                        Log.v(TAG, "Standard device - IME active: " + isActive);
+                        // 其他设备使用标准检测：结合isActive和WindowInsets结果
+                        shouldShow = isActive || isKeyboardVisible; // 如果WindowInsets检测到键盘或IME激活
+                        Log.v(TAG, "Standard device - IME active: " + isActive + 
+                                  ", WindowInsets detected: " + isKeyboardVisible + 
+                                  ", shouldShow: " + shouldShow);
                     }
                 }
                 
                 // 只有在状态真正改变时才处理
                 if (shouldShow != isKeyboardVisible) {
-                    Log.d(TAG, "Periodic check detected keyboard state change: " + shouldShow);
+                    Log.d(TAG, "Periodic check detected keyboard state change: " + isKeyboardVisible + " -> " + shouldShow);
                     handleKeyboardStateChange(shouldShow);
                 }
             }
         } catch (Exception e) {
             Log.e(TAG, "Error in InputMethodManager keyboard check", e);
         }
+    }
+    
+    /**
+     * 检测是否是小米设备
+     */
+    private boolean isXiaomiDevice() {
+        return Build.MANUFACTURER.toLowerCase().contains("xiaomi") || 
+               Build.MANUFACTURER.toLowerCase().contains("redmi");
+    }
+    
+    /**
+     * 小米设备专用键盘状态检测
+     * 使用多信号融合和连续性检测提高准确性
+     */
+    private boolean detectXiaomiKeyboardState(boolean isActive) {
+        long currentTime = System.currentTimeMillis();
+        
+        // 1. 必须是第三方输入法
+        if (!isCommonThirdPartyIME(currentInputMethod)) {
+            consecutiveActiveCount = 0;
+            consecutiveInactiveCount = 0;
+            return false;
+        }
+        
+        // 2. 统计连续的active/inactive状态
+        if (isActive) {
+            consecutiveActiveCount++;
+            consecutiveInactiveCount = 0;
+        } else {
+            consecutiveInactiveCount++;
+            consecutiveActiveCount = 0;
+        }
+        
+        // 3. 基于连续性判断状态
+        boolean newState = false;
+        
+        if (consecutiveActiveCount >= XIAOMI_CONFIDENCE_THRESHOLD) {
+            // 连续检测到active，认为键盘弹出
+            newState = true;
+        } else if (consecutiveInactiveCount >= XIAOMI_CONFIDENCE_THRESHOLD) {
+            // 连续检测到inactive，认为键盘隐藏
+            newState = false;
+        } else {
+            // 状态不稳定，保持之前的状态
+            newState = lastXiaomiKeyboardState;
+        }
+        
+        // 4. 状态变化时需要稳定一段时间才确认
+        if (newState != lastXiaomiKeyboardState) {
+            if (currentTime - lastXiaomiStateChangeTime > XIAOMI_STATE_STABLE_DURATION) {
+                Log.d(TAG, "Xiaomi keyboard state confirmed change: " + lastXiaomiKeyboardState + " -> " + newState +
+                          " (active: " + consecutiveActiveCount + ", inactive: " + consecutiveInactiveCount + ")");
+                lastXiaomiKeyboardState = newState;
+                lastXiaomiStateChangeTime = currentTime;
+            }
+        } else {
+            // 状态稳定，更新时间戳
+            lastXiaomiStateChangeTime = currentTime;
+        }
+        
+        // 5. 额外的WindowInsets信号融合
+        if (isKeyboardVisible && !lastXiaomiKeyboardState) {
+            // 如果WindowInsets检测到键盘但我们的逻辑认为没有，倾向于显示
+            Log.d(TAG, "Xiaomi: WindowInsets override - showing floating ball due to insets detection");
+            return true;
+        }
+        
+        return lastXiaomiKeyboardState;
     }
     
     /**
@@ -688,6 +774,7 @@ public class KeyboardAwareFloatingBallService extends Service {
     
     /**
      * 检查是否有最近的输入活动
+     * 优化版本：结合WindowInsets检测和时间窗口
      */
     private boolean hasRecentInputActivity() {
         long currentTime = System.currentTimeMillis();
@@ -699,6 +786,54 @@ public class KeyboardAwareFloatingBallService extends Service {
             return true;
         }
         
+        Log.v(TAG, "Input activity check - last: " + (currentTime - lastInputActivityTime) + "ms ago, hasRecent: " + hasRecent);
         return hasRecent;
+    }
+    
+    /**
+     * 获取增强的调试信息
+     */
+    public String getEnhancedDebugInfo() {
+        StringBuilder info = new StringBuilder();
+        info.append("=== Enhanced Keyboard Detection Debug ===\n");
+        info.append("Device: ").append(Build.MANUFACTURER).append(" ").append(Build.MODEL).append("\n");
+        info.append("Android: ").append(Build.VERSION.RELEASE).append(" (API ").append(Build.VERSION.SDK_INT).append(")\n");
+        info.append("Current IME: ").append(currentInputMethod).append("\n");
+        info.append("Is Inputist: ").append(isInputistIME(currentInputMethod)).append("\n");
+        info.append("Keyboard visible (service): ").append(isKeyboardVisible).append("\n");
+        
+        if (isXiaomiDevice()) {
+            info.append("\n=== Xiaomi Device Detection ===\n");
+            info.append("Last Xiaomi state: ").append(lastXiaomiKeyboardState).append("\n");
+            info.append("Consecutive active: ").append(consecutiveActiveCount).append("\n");
+            info.append("Consecutive inactive: ").append(consecutiveInactiveCount).append("\n");
+            info.append("Last state change: ").append(System.currentTimeMillis() - lastXiaomiStateChangeTime).append("ms ago\n");
+            info.append("Is common third party: ").append(isCommonThirdPartyIME(currentInputMethod)).append("\n");
+        }
+        
+        try {
+            InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                info.append("IMM isActive: ").append(imm.isActive()).append("\n");
+            }
+        } catch (Exception e) {
+            info.append("IMM error: ").append(e.getMessage()).append("\n");
+        }
+        
+        info.append("Input activity: ").append(System.currentTimeMillis() - lastInputActivityTime).append("ms ago\n");
+        info.append("Has recent activity: ").append(hasRecentInputActivity()).append("\n");
+        
+        return info.toString();
+    }
+    
+    /**
+     * 重置小米设备检测状态
+     */
+    private void resetXiaomiDetectionState() {
+        lastXiaomiKeyboardState = false;
+        lastXiaomiStateChangeTime = System.currentTimeMillis();
+        consecutiveActiveCount = 0;
+        consecutiveInactiveCount = 0;
+        Log.d(TAG, "Xiaomi detection state reset to initial values");
     }
 }
