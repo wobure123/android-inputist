@@ -1,9 +1,14 @@
 package com.inputassistant.universal;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
+import android.content.ComponentName;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.*;
 import androidx.appcompat.app.AlertDialog;
@@ -11,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.inputassistant.universal.adapter.ActionAdapter;
+import com.inputassistant.universal.floating.FloatingBallService;
 import com.inputassistant.universal.model.Action;
 import com.inputassistant.universal.repository.SettingsRepository;
 import com.inputassistant.universal.utils.PermissionHelper;
