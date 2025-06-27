@@ -62,7 +62,7 @@ public class InputMethodHelper {
                 handler.postDelayed(() -> {
                     try {
                         android.widget.Toast.makeText(context, 
-                            "请在弹出的选择器中选择"输入法助手"", 
+                            "请在弹出的选择器中选择\"输入法助手\"", 
                             android.widget.Toast.LENGTH_LONG).show();
                     } catch (Exception e) {
                         Log.w(TAG, "Failed to show picker hint", e);
@@ -87,7 +87,7 @@ public class InputMethodHelper {
             Log.d(TAG, "Opened input method settings");
             
             android.widget.Toast.makeText(context, 
-                "请在设置中选择"输入法助手"", 
+                "请在设置中选择\"输入法助手\"", 
                 android.widget.Toast.LENGTH_LONG).show();
         } catch (Exception e) {
             Log.e(TAG, "Failed to open input method settings", e);

@@ -97,7 +97,7 @@ public class FloatingBallView extends FrameLayout {
             case ENABLED_NOT_CURRENT:
                 // 输入法已启用但非当前，直接显示输入法选择器切换
                 Log.d(TAG, "InputMethod enabled but not current, showing picker");
-                showToast("请选择"输入法助手"");
+                showToast("请选择\"输入法助手\"");
                 InputMethodHelper.showInputMethodPicker(getContext());
                 break;
                 
