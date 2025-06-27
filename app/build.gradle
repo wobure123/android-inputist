@@ -4,7 +4,7 @@ plugins {
 
 android {
     namespace 'com.inputassistant.universal'
-    compileSdk 34
+    compileSdk 35  // 更新到 Android 15
 
     // 签名配置
     signingConfigs {
@@ -40,7 +40,7 @@ android {
     defaultConfig {
         applicationId "com.inputassistant.universal"
         minSdk 24
-        targetSdk 34
+        targetSdk 35  // 更新到 Android 15 支持
         versionCode 5
         versionName "2.4.0"  // 语义化版本号: 主版本.次版本.修订版本 - 悬浮球架构重构，精准键盘检测
 

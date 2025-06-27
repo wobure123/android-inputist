@@ -59,6 +59,19 @@ public class KeyboardAwareFloatingBallService extends Service {
     public void onCreate() {
         super.onCreate();
         Log.d(TAG, "KeyboardAwareFloatingBallService created");
+        Log.i(TAG, "Running on Android " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")");
+        Log.i(TAG, "Device: " + Build.MANUFACTURER + " " + Build.MODEL);
+        
+        // Android 15 特殊适配检查
+        if (Build.VERSION.SDK_INT >= 35) {  // Android 15 is API 35
+            Log.w(TAG, "Running on Android 15+, checking special compatibility requirements");
+            
+            // 检查是否在小米设备上需要特殊处理
+            if (Build.MANUFACTURER.toLowerCase().contains("xiaomi") || 
+                Build.MANUFACTURER.toLowerCase().contains("redmi")) {
+                Log.w(TAG, "Detected Xiaomi/Redmi device on Android 15, may need special handling");
+            }
+        }
         
         // 检查权限
         if (!PermissionHelper.hasOverlayPermission(this)) {
@@ -142,17 +155,24 @@ public class KeyboardAwareFloatingBallService extends Service {
      * 创建锚点视图
      */
     private void createAnchorView() {
+        Log.d(TAG, "Creating anchor view for keyboard detection");
+        
         anchorView = new View(this);
         anchorView.setFocusable(false);
         anchorView.setFocusableInTouchMode(false);
         
         // 设置窗口参数
         anchorParams = new WindowManager.LayoutParams();
+        
+        // Android 版本适配
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             anchorParams.type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
+            Log.d(TAG, "Using TYPE_APPLICATION_OVERLAY for Android 8+");
         } else {
             anchorParams.type = WindowManager.LayoutParams.TYPE_PHONE;
+            Log.d(TAG, "Using TYPE_PHONE for Android 7");
         }
+        
         anchorParams.format = PixelFormat.TRANSLUCENT;
         anchorParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE |
                            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
@@ -166,8 +186,21 @@ public class KeyboardAwareFloatingBallService extends Service {
         
         try {
             windowManager.addView(anchorView, anchorParams);
+            Log.i(TAG, "Anchor view created successfully");
         } catch (Exception e) {
             Log.e(TAG, "Failed to add anchor view", e);
+            Log.e(TAG, "Android version: " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")");
+            Log.e(TAG, "Device: " + Build.MANUFACTURER + " " + Build.MODEL);
+            
+            // 锚点视图创建失败，但不阻止服务运行，稍后重试
+            anchorView = null;
+            
+            // 延迟重试创建锚点视图
+            android.os.Handler handler = new android.os.Handler(getMainLooper());
+            handler.postDelayed(() -> {
+                Log.d(TAG, "Retrying to create anchor view...");
+                createAnchorView();
+            }, 2000);
         }
     }
     
@@ -352,6 +385,33 @@ public class KeyboardAwareFloatingBallService extends Service {
             floatingBallManager.hide();
             Log.d(TAG, "Floating ball hidden");
         }
+    }
+    
+    /**
+     * 强制显示悬浮球（用于测试）
+     */
+    public void forceShowFloatingBall() {
+        Log.d(TAG, "Force showing floating ball for testing");
+        if (floatingBallManager != null) {
+            floatingBallManager.show();
+        }
+    }
+    
+    /**
+     * 获取服务状态信息（用于调试）
+     */
+    public String getServiceStatus() {
+        StringBuilder status = new StringBuilder();
+        status.append("KeyboardAwareFloatingBallService Status:\n");
+        status.append("- Service running: true\n");
+        status.append("- Floating ball enabled: ").append(isFloatingBallEnabled).append("\n");
+        status.append("- Keyboard visible: ").append(isKeyboardVisible).append("\n");
+        status.append("- Current IME: ").append(currentInputMethod).append("\n");
+        status.append("- Anchor view: ").append(anchorView != null ? "Created" : "Failed").append("\n");
+        status.append("- Floating ball manager: ").append(floatingBallManager != null ? "Initialized" : "Failed").append("\n");
+        status.append("- Android version: ").append(Build.VERSION.RELEASE).append(" (API ").append(Build.VERSION.SDK_INT).append(")\n");
+        status.append("- Device: ").append(Build.MANUFACTURER).append(" ").append(Build.MODEL);
+        return status.toString();
     }
     
     /**

@@ -313,7 +313,22 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
      */
     private void toggleFloatingBall(boolean enable) {
         settingsRepository.setFloatingBallEnabled(enable);
-        showToast(enable ? "悬浮球已启用" : "悬浮球已禁用");
+        
+        if (enable) {
+            // 启用悬浮球时，启动新的键盘感知服务
+            Intent serviceIntent = new Intent(this, KeyboardAwareFloatingBallService.class);
+            startService(serviceIntent);
+            showToast("✅ 悬浮球已启用，请到其他应用测试输入框");
+        } else {
+            // 禁用悬浮球时，停止所有相关服务
+            Intent oldServiceIntent = new Intent(this, FloatingBallService.class);
+            stopService(oldServiceIntent);
+            
+            Intent newServiceIntent = new Intent(this, KeyboardAwareFloatingBallService.class);
+            stopService(newServiceIntent);
+            
+            showToast("❌ 悬浮球已禁用");
+        }
     }
     
     /**
@@ -490,16 +505,70 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
         }
         
         try {
-            // 直接启动新的键盘感知悬浮球服务
+            // 启动键盘感知悬浮球服务
             Intent serviceIntent = new Intent(this, KeyboardAwareFloatingBallService.class);
             startService(serviceIntent);
             
-            showToast("🎈 键盘感知悬浮球服务已启动，请到其他应用测试输入框");
+            // 延迟后绑定服务并获取状态
+            postDelayed(() -> {
+                bindKeyboardAwareServiceForTest();
+            }, 1000);
+            
+            showToast("🎈 正在启动键盘感知悬浮球服务...");
             
         } catch (Exception e) {
             showToast("❌ 启动服务失败：" + e.getMessage());
             Log.e("MainActivity", "Force show floating ball failed", e);
         }
+    }
+    
+    /**
+     * 绑定键盘感知服务进行测试和诊断
+     */
+    private void bindKeyboardAwareServiceForTest() {
+        Intent serviceIntent = new Intent(this, KeyboardAwareFloatingBallService.class);
+        bindService(serviceIntent, new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder service) {
+                try {
+                    KeyboardAwareFloatingBallService.KeyboardAwareBinder binder = 
+                        (KeyboardAwareFloatingBallService.KeyboardAwareBinder) service;
+                    KeyboardAwareFloatingBallService keyboardService = binder.getService();
+                    
+                    // 获取服务状态并显示
+                    String status = keyboardService.getServiceStatus();
+                    Log.d("MainActivity", "Service status:\n" + status);
+                    
+                    // 强制显示悬浮球进行测试
+                    keyboardService.forceShowFloatingBall();
+                    
+                    // 显示诊断信息
+                    new AlertDialog.Builder(MainActivity.this)
+                            .setTitle("🔍 服务诊断信息")
+                            .setMessage(status + "\n\n💡 如果悬浮球仍未出现，请查看 Logcat 日志获取详细错误信息。")
+                            .setPositiveButton("确定", null)
+                            .show();
+                    
+                    // 延迟后解绑服务
+                    postDelayed(() -> {
+                        try {
+                            unbindService(this);
+                        } catch (Exception e) {
+                            Log.w("MainActivity", "Unbind service failed", e);
+                        }
+                    }, 2000);
+                    
+                } catch (Exception e) {
+                    showToast("❌ 服务连接失败：" + e.getMessage());
+                    Log.e("MainActivity", "Service connection failed", e);
+                }
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+                Log.d("MainActivity", "KeyboardAwareFloatingBallService disconnected");
+            }
+        }, Context.BIND_AUTO_CREATE);
     }
     
     /**
