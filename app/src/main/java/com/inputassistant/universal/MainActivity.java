@@ -21,6 +21,7 @@ import com.inputassistant.universal.model.Action;
 import com.inputassistant.universal.repository.SettingsRepository;
 import com.inputassistant.universal.utils.PermissionHelper;
 import com.inputassistant.universal.utils.AccessibilityHelper;
+import com.inputassistant.universal.utils.InputMethodHelper;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
