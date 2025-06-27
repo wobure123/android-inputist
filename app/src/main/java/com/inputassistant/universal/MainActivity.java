@@ -42,6 +42,10 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
     
     private SettingsRepository settingsRepository;
     private ActionAdapter actionAdapter;
+    
+    // 权限状态跟踪，避免重复提示
+    private boolean lastOverlayPermissionState = false;
+    private boolean lastAccessibilityPermissionState = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +58,9 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
         loadSettings();
         setupClickListeners();
         updateStatus();
+        
+        // 初始化权限状态
+        initPermissionStates();
     }
 
     private void initViews() {
@@ -317,7 +324,8 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
         String message = "权限状态检查：\n\n" +
                         "🔑 悬浮窗权限：" + (hasOverlay ? "✅ 已授予" : "❌ 未授予") + "\n" +
                         "🔑 辅助功能权限：" + (hasAccessibility ? "✅ 已启用" : "❌ 未启用") + "\n\n" +
-                        "悬浮球功能需要两个权限都启用才能正常工作。";
+                        "悬浮球功能需要两个权限都启用才能正常工作。\n\n" +
+                        "💡 提示：开启权限后返回应用会自动检测并提示成功。";
         
         AlertDialog.Builder builder = new AlertDialog.Builder(this)
                 .setTitle("权限管理")
@@ -350,7 +358,8 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
                            "• 享受智能悬浮球便捷体验\n" +
                            "• 无需手动切换输入法\n\n" +
                            "🔒 隐私说明：\n" +
-                           "我们只检测输入框状态，不收集任何输入内容。")
+                           "我们只检测输入框状态，不收集任何输入内容。\n\n" +
+                           "💡 操作提示：开启后返回应用会自动检测并提示成功。")
                 .setPositiveButton("去设置", (dialog, which) -> {
                     AccessibilityHelper.openAccessibilitySettings(this);
                 })
@@ -368,7 +377,7 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
                            "开启权限后，您就可以：\n" +
                            "• 在任意应用中快速调用输入法助手\n" +
                            "• 享受更便捷的文本处理体验\n\n" +
-                           "请点击\"去设置\"开启权限。")
+                           "💡 操作提示：开启后返回应用会自动检测并提示成功。")
                 .setPositiveButton("去设置", (dialog, which) -> {
                     PermissionHelper.openOverlaySettings(this);
                 })
@@ -380,6 +389,68 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
     protected void onResume() {
         super.onResume();
         updateStatus();
+        
+        // 检查权限状态变化，给出成功提示
+        checkPermissionStatusAndNotify();
+    }
+    
+    /**
+     * 检查权限状态并给出相应提示
+     */
+    private void checkPermissionStatusAndNotify() {
+        boolean hasOverlay = PermissionHelper.hasOverlayPermission(this);
+        boolean hasAccessibility = AccessibilityHelper.isOurAccessibilityServiceEnabled(this);
+        
+        // 检查悬浮窗权限是否刚刚获得
+        if (hasOverlay && !lastOverlayPermissionState) {
+            showToast("✅ 悬浮窗权限已授予");
+        }
+        
+        // 检查辅助功能权限是否刚刚获得
+        if (hasAccessibility && !lastAccessibilityPermissionState) {
+            showToast("✅ 辅助功能权限已启用");
+        }
+        
+        // 检查是否两个权限都刚刚配置完成
+        if (hasOverlay && hasAccessibility && (!lastOverlayPermissionState || !lastAccessibilityPermissionState)) {
+            boolean isFloatingBallEnabled = settingsRepository.isFloatingBallEnabled();
+            if (!isFloatingBallEnabled) {
+                // 权限都有了，但功能未启用，延迟显示对话框避免与toast冲突
+                postDelayed(() -> showPermissionSuccessDialog(), 1000);
+            } else {
+                // 一切就绪
+                postDelayed(() -> showToast("🎈 悬浮球功能已完全启用！"), 500);
+            }
+        }
+        
+        // 更新权限状态
+        lastOverlayPermissionState = hasOverlay;
+        lastAccessibilityPermissionState = hasAccessibility;
+    }
+    
+    /**
+     * 延迟执行任务
+     */
+    private void postDelayed(Runnable runnable, long delayMillis) {
+        new android.os.Handler(getMainLooper()).postDelayed(runnable, delayMillis);
+    }
+    
+    /**
+     * 显示权限配置成功对话框
+     */
+    private void showPermissionSuccessDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("🎉 权限配置完成")
+                .setMessage("恭喜！所有必要权限都已配置完成：\n\n" +
+                           "✅ 悬浮窗权限：已授予\n" +
+                           "✅ 辅助功能权限：已启用\n\n" +
+                           "现在可以启用悬浮球功能了！")
+                .setPositiveButton("启用悬浮球", (dialog, which) -> {
+                    settingsRepository.setFloatingBallEnabled(true);
+                    showToast("🎈 悬浮球功能已启用！");
+                })
+                .setNegativeButton("稍后启用", null)
+                .show();
     }
 
     private void setMainTitleWithVersion() {
@@ -397,5 +468,13 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
             // 如果获取版本号失败，使用默认标题
             tvMainTitle.setText(R.string.main_title);
         }
+    }
+    
+    /**
+     * 初始化权限状态
+     */
+    private void initPermissionStates() {
+        lastOverlayPermissionState = PermissionHelper.hasOverlayPermission(this);
+        lastAccessibilityPermissionState = AccessibilityHelper.isOurAccessibilityServiceEnabled(this);
     }
 }
