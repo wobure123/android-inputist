@@ -32,10 +32,12 @@ public class FloatingBallView extends FrameLayout {
     private float lastX, lastY;
     private float downX, downY;
     private long touchStartTime;
+    private long lastClickTime = 0; // 防止重复点击
     
     // 点击和拖拽的判断阈值
     private static final float CLICK_THRESHOLD = 10f;
     private static final long CLICK_TIME_THRESHOLD = 200;
+    private static final long CLICK_DEBOUNCE_TIME = 500; // 防抖时间
 
     public FloatingBallView(Context context) {
         super(context);
@@ -76,6 +78,15 @@ public class FloatingBallView extends FrameLayout {
      * 处理悬浮球点击事件
      */
     private void onBallClick(View v) {
+        long currentTime = System.currentTimeMillis();
+        
+        // 防重复点击
+        if (currentTime - lastClickTime < CLICK_DEBOUNCE_TIME) {
+            Log.d(TAG, "Click ignored due to debounce (too soon after last click)");
+            return;
+        }
+        lastClickTime = currentTime;
+        
         Log.d(TAG, "FloatingBall clicked");
         
         // 添加点击动画效果

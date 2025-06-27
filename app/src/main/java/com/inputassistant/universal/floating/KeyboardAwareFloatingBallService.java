@@ -51,6 +51,11 @@ public class KeyboardAwareFloatingBallService extends Service {
     private Runnable pendingStateChange = null;
     private static final long STATE_CHANGE_DELAY = 300; // 300ms 延迟避免快速切换
     
+    // 定时检查相关
+    private android.os.Handler periodicHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private Runnable periodicCheckRunnable;
+    private boolean isPeriodicCheckRunning = false;
+    
     // Binder类，用于与其他组件通信
     public class KeyboardAwareBinder extends Binder {
         public KeyboardAwareFloatingBallService getService() {
@@ -140,6 +145,9 @@ public class KeyboardAwareFloatingBallService extends Service {
     public void onDestroy() {
         Log.d(TAG, "KeyboardAwareFloatingBallService destroyed");
         
+        // 停止定时检查
+        stopPeriodicKeyboardCheck();
+        
         // 清理资源
         cleanupKeyboardDetection();
         
@@ -225,6 +233,8 @@ public class KeyboardAwareFloatingBallService extends Service {
     private void initModernKeyboardDetection() {
         if (anchorView == null) return;
         
+        Log.d(TAG, "Setting up WindowInsets listener...");
+        
         ViewCompat.setOnApplyWindowInsetsListener(anchorView, (v, insets) -> {
             boolean isVisible = insets.isVisible(WindowInsetsCompat.Type.ime());
             int imeHeight = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
@@ -234,6 +244,16 @@ public class KeyboardAwareFloatingBallService extends Service {
             handleKeyboardStateChange(isVisible);
             return insets;
         });
+        
+        // 在小米/红米设备上添加额外的监听机制
+        if (Build.MANUFACTURER.toLowerCase().contains("xiaomi") || 
+            Build.MANUFACTURER.toLowerCase().contains("redmi")) {
+            Log.w(TAG, "Xiaomi device detected, enabling legacy keyboard detection as backup");
+            initLegacyKeyboardDetection();
+            
+            // 添加定时检查机制作为最后的备用方案
+            startPeriodicKeyboardCheck();
+        }
     }
     
     /**
@@ -496,8 +516,87 @@ public class KeyboardAwareFloatingBallService extends Service {
             }
             anchorView = null;
         }
+        
+        // 停止定时检查
+        stopPeriodicKeyboardCheck();
     }
     
+    /**
+     * 启动定时键盘检查（备用方案）
+     */
+    private void startPeriodicKeyboardCheck() {
+        if (isPeriodicCheckRunning) return;
+        
+        Log.d(TAG, "Starting periodic keyboard check as backup for Xiaomi devices");
+        isPeriodicCheckRunning = true;
+        
+        periodicCheckRunnable = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    checkKeyboardStateByInputMethodManager();
+                    
+                    // 每2秒检查一次
+                    if (isPeriodicCheckRunning) {
+                        periodicHandler.postDelayed(this, 2000);
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Error in periodic keyboard check", e);
+                }
+            }
+        };
+        
+        periodicHandler.postDelayed(periodicCheckRunnable, 2000);
+    }
+    
+    /**
+     * 停止定时检查
+     */
+    private void stopPeriodicKeyboardCheck() {
+        if (periodicCheckRunnable != null) {
+            periodicHandler.removeCallbacks(periodicCheckRunnable);
+            isPeriodicCheckRunning = false;
+            Log.d(TAG, "Stopped periodic keyboard check");
+        }
+    }
+    
+    /**
+     * 通过 InputMethodManager 检查键盘状态
+     */
+    private void checkKeyboardStateByInputMethodManager() {
+        try {
+            InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                // 检查当前输入法是否处于激活状态
+                boolean isActive = imm.isActive();
+                
+                // 更新当前输入法信息
+                String previousIME = currentInputMethod;
+                updateCurrentInputMethod();
+                
+                // 如果输入法发生变化，记录日志
+                if (!currentInputMethod.equals(previousIME)) {
+                    Log.d(TAG, "Periodic check - IME changed from " + previousIME + " to " + currentInputMethod);
+                }
+                
+                // 检查是否应该显示悬浮球
+                boolean shouldShow = isActive && !isInputistIME(currentInputMethod);
+                
+                Log.v(TAG, "Periodic check - IME active: " + isActive + 
+                          ", current: " + currentInputMethod + 
+                          ", should show: " + shouldShow);
+                
+                // 只有在状态真正改变时才处理
+                if (shouldShow != isKeyboardVisible) {
+                    Log.d(TAG, "Periodic check detected keyboard state change: " + shouldShow);
+                    handleKeyboardStateChange(shouldShow);
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error in InputMethodManager keyboard check", e);
+        }
+    }
+
     /**
      * 获取当前键盘状态
      */
