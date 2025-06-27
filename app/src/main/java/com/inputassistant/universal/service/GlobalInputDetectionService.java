@@ -6,8 +6,13 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.res.Configuration;
+import android.graphics.Rect;
 import android.os.IBinder;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Display;
+import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import com.inputassistant.universal.floating.FloatingBallService;
@@ -17,9 +22,8 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 
 /**
- * 全局输入检测服务
- * 使用辅助功能监听全局输入框焦点变化
- * 在任何输入框激活时显示悬浮球
+ * 全局输入检测服务 - 简化版
+ * 监听软键盘弹出/隐藏状态来控制悬浮球显示
  */
 public class GlobalInputDetectionService extends AccessibilityService {
     private static final String TAG = "GlobalInputDetectionService";
@@ -28,6 +32,11 @@ public class GlobalInputDetectionService extends AccessibilityService {
     private FloatingBallService floatingBallService;
     private boolean isFloatingBallServiceBound = false;
     private boolean isFloatingBallEnabled = false;
+    
+    // 软键盘状态检测
+    private int screenHeight = 0;
+    private boolean keyboardVisible = false;
+    private String currentInputMethod = "";
     
     // 服务连接
     private ServiceConnection floatingBallConnection = new ServiceConnection() {
@@ -52,167 +61,130 @@ public class GlobalInputDetectionService extends AccessibilityService {
         super.onServiceConnected();
         Log.d(TAG, "GlobalInputDetectionService connected");
         
+        // 初始化屏幕高度
+        initScreenHeight();
+        
         // 初始化设置仓库
         try {
             settingsRepository = new SettingsRepository(this);
             isFloatingBallEnabled = settingsRepository.isFloatingBallEnabled();
-            Log.d(TAG, "Floating ball enabled: " + isFloatingBallEnabled);
         } catch (GeneralSecurityException | IOException e) {
             Log.e(TAG, "Failed to initialize settings repository", e);
             return;
         }
         
-        // 配置辅助功能服务
+        // 配置辅助功能服务 - 只监听窗口变化事件
         AccessibilityServiceInfo info = new AccessibilityServiceInfo();
-        info.eventTypes = AccessibilityEvent.TYPE_VIEW_FOCUSED | 
-                         AccessibilityEvent.TYPE_VIEW_CLICKED |
-                         AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED;
+        info.eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED |
+                         AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED;
         info.feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC;
-        info.flags = AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS |
-                    AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS;
+        info.flags = AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS;
+        info.packageNames = null;
+        info.notificationTimeout = 100;
         setServiceInfo(info);
         
-        // 如果悬浮球已启用，则绑定悬浮球服务
+        // 绑定悬浮球服务
         if (isFloatingBallEnabled) {
-            Log.d(TAG, "Floating ball is enabled, binding service");
             bindFloatingBallService();
-        } else {
-            Log.d(TAG, "Floating ball is disabled, not binding service");
+        }
+    }
+    
+    /**
+     * 初始化屏幕高度
+     */
+    private void initScreenHeight() {
+        try {
+            WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+            Display display = windowManager.getDefaultDisplay();
+            DisplayMetrics metrics = new DisplayMetrics();
+            display.getMetrics(metrics);
+            screenHeight = metrics.heightPixels;
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to initialize screen height", e);
         }
     }
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        // 实时检查悬浮球是否启用
+        // 检查悬浮球是否启用
         try {
             isFloatingBallEnabled = settingsRepository != null && settingsRepository.isFloatingBallEnabled();
         } catch (Exception e) {
-            Log.e(TAG, "Failed to check floating ball enabled status", e);
             return;
         }
         
-        if (!isFloatingBallEnabled) {
-            Log.d(TAG, "Floating ball is disabled, ignoring event");
+        if (!isFloatingBallEnabled || !isFloatingBallServiceBound) {
+            if (isFloatingBallEnabled && !isFloatingBallServiceBound) {
+                bindFloatingBallService();
+            }
             return;
         }
         
-        if (!isFloatingBallServiceBound) {
-            Log.d(TAG, "FloatingBallService not bound, trying to bind...");
-            bindFloatingBallService();
-            return;
-        }
-        
+        // 只处理窗口变化事件来检测软键盘状态
         int eventType = event.getEventType();
-        Log.d(TAG, "Accessibility event: " + eventType + ", package: " + event.getPackageName());
-        
-        switch (eventType) {
-            case AccessibilityEvent.TYPE_VIEW_FOCUSED:
-                handleViewFocused(event);
-                break;
-            case AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED:
-                // 窗口变化时检查是否有输入框
-                checkForInputFields();
-                break;
+        if (eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED || 
+            eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
+            postDelayed(() -> checkKeyboardState(), 200);
         }
     }
     
     /**
-     * 处理视图获得焦点事件
+     * 检查软键盘状态
      */
-    private void handleViewFocused(AccessibilityEvent event) {
-        AccessibilityNodeInfo source = event.getSource();
-        if (source == null) return;
+    private void checkKeyboardState() {
+        if (screenHeight <= 0) return;
         
         try {
-            // 检查是否是可编辑的输入框
-            if (isEditableField(source)) {
-                Log.d(TAG, "Input field focused, showing floating ball");
-                showFloatingBall();
-            } else {
-                Log.d(TAG, "Non-input field focused, hiding floating ball");
-                hideFloatingBall();
-            }
-        } finally {
-            source.recycle();
-        }
-    }
-    
-    /**
-     * 检查当前窗口是否有输入框
-     */
-    private void checkForInputFields() {
-        AccessibilityNodeInfo rootNode = getRootInActiveWindow();
-        if (rootNode == null) return;
-        
-        try {
-            boolean hasInputField = findEditableField(rootNode);
-            if (hasInputField) {
-                // 延迟一点显示，确保输入法已经启动
-                postDelayed(() -> {
-                    if (isCurrentlyInInputField()) {
-                        showFloatingBall();
-                    }
-                }, 300);
-            } else {
-                hideFloatingBall();
-            }
-        } finally {
+            AccessibilityNodeInfo rootNode = getRootInActiveWindow();
+            if (rootNode == null) return;
+            
+            Rect windowBounds = new Rect();
+            rootNode.getBoundsInScreen(windowBounds);
             rootNode.recycle();
-        }
-    }
-    
-    /**
-     * 递归查找可编辑字段
-     */
-    private boolean findEditableField(AccessibilityNodeInfo node) {
-        if (node == null) return false;
-        
-        if (isEditableField(node)) {
-            return true;
-        }
-        
-        for (int i = 0; i < node.getChildCount(); i++) {
-            AccessibilityNodeInfo child = node.getChild(i);
-            if (child != null) {
-                try {
-                    if (findEditableField(child)) {
-                        return true;
-                    }
-                } finally {
-                    child.recycle();
+            
+            // 计算是否显示软键盘（25%阈值）
+            int visibleHeight = windowBounds.height();
+            boolean currentKeyboardVisible = (screenHeight - visibleHeight) > (screenHeight * 0.25);
+            String currentIME = getCurrentInputMethod();
+            
+            // 检查状态变化
+            if (currentKeyboardVisible != keyboardVisible || !currentIME.equals(currentInputMethod)) {
+                keyboardVisible = currentKeyboardVisible;
+                currentInputMethod = currentIME;
+                
+                if (keyboardVisible && !isInputistIME(currentInputMethod)) {
+                    // 非Inputist输入法弹出，显示悬浮球
+                    showFloatingBall();
+                } else {
+                    // 输入法隐藏或切换到Inputist，隐藏悬浮球
+                    hideFloatingBall();
                 }
             }
+        } catch (Exception e) {
+            Log.e(TAG, "Error checking keyboard state", e);
         }
-        
-        return false;
     }
     
     /**
-     * 检查是否是可编辑的输入框
+     * 获取当前输入法
      */
-    private boolean isEditableField(AccessibilityNodeInfo node) {
-        if (node == null) return false;
-        
-        return node.isEditable() || 
-               node.isFocusable() && 
-               (node.getClassName() != null && 
-                (node.getClassName().toString().contains("EditText") ||
-                 node.getClassName().toString().contains("TextInputEditText")));
+    private String getCurrentInputMethod() {
+        try {
+            String ime = android.provider.Settings.Secure.getString(
+                getContentResolver(),
+                android.provider.Settings.Secure.DEFAULT_INPUT_METHOD
+            );
+            return ime != null ? ime : "";
+        } catch (Exception e) {
+            return "";
+        }
     }
     
     /**
-     * 检查当前是否在输入框中
+     * 检查是否是Inputist输入法
      */
-    private boolean isCurrentlyInInputField() {
-        AccessibilityNodeInfo focused = findFocus(AccessibilityNodeInfo.FOCUS_INPUT);
-        if (focused != null) {
-            try {
-                return isEditableField(focused);
-            } finally {
-                focused.recycle();
-            }
-        }
-        return false;
+    private boolean isInputistIME(String ime) {
+        return ime != null && ime.contains("com.inputassistant.universal");
     }
     
     /**
@@ -239,10 +211,8 @@ public class GlobalInputDetectionService extends AccessibilityService {
     private void bindFloatingBallService() {
         if (!isFloatingBallServiceBound) {
             Intent intent = new Intent(this, FloatingBallService.class);
-            // 先启动服务，再绑定
             startService(intent);
-            boolean bound = bindService(intent, floatingBallConnection, Context.BIND_AUTO_CREATE);
-            Log.d(TAG, "Attempting to bind FloatingBallService, result: " + bound);
+            bindService(intent, floatingBallConnection, Context.BIND_AUTO_CREATE);
         }
     }
     
@@ -263,16 +233,21 @@ public class GlobalInputDetectionService extends AccessibilityService {
         android.os.Handler handler = new android.os.Handler(getMainLooper());
         handler.postDelayed(runnable, delayMillis);
     }
+    
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        initScreenHeight();
+    }
 
     @Override
     public void onInterrupt() {
-        Log.d(TAG, "Service interrupted");
+        // 服务中断时不需要特殊处理
     }
     
     @Override
     public void onDestroy() {
         super.onDestroy();
         unbindFloatingBallService();
-        Log.d(TAG, "GlobalInputDetectionService destroyed");
     }
 }

@@ -117,20 +117,26 @@ versionName "2.3.0"  // 新增智能悬浮球功能
 ### 功能测试
 - [ ] **权限配置测试** - 悬浮窗权限和辅助功能权限申请流程
 - [ ] **辅助功能服务** - 在设置→辅助功能→已下载应用中启用Inputist
-- [ ] **悬浮球显示/隐藏逻辑** - 在任何应用中点击输入框测试
+- [ ] **软键盘检测** - 在任何应用中点击输入框，软键盘弹出时悬浮球应显示
+- [ ] **输入法状态检测** - 切换到Inputist输入法后悬浮球应自动隐藏
+- [ ] **悬浮球交互** - 点击悬浮球显示输入法切换菜单
 - [ ] **权限检测机制** - 返回应用后的权限状态提示  
 - [ ] **测试功能** - 使用主界面的"测试悬浮球"按钮
 - [ ] 拖拽和磁性吸附
-- [ ] 全局输入框检测（在不同应用中测试）
-- [ ] 输入法切换功能
 - [ ] 与现有功能的兼容性
 - [ ] 悬浮球启用/禁用开关
 
+### 简化版逻辑验证 (v2.3.0)
+- [ ] **软键盘弹出检测** - 任何输入法弹出时悬浮球显示
+- [ ] **Inputist输入法检测** - 切换到Inputist后悬浮球自动隐藏
+- [ ] **软键盘隐藏检测** - 软键盘隐藏时悬浮球自动隐藏
+- [ ] **快速切换功能** - 点击悬浮球→选择Inputist→成功切换→悬浮球消失
+
 ### 调试信息
-- 🔍 AccessibilityHelper 提供详细的权限检查日志
-- 🔍 GlobalInputDetectionService 提供事件处理日志
-- 🔍 FloatingBallService 提供显示/隐藏操作日志
-- 🔍 使用 `adb logcat -s AccessibilityHelper:D GlobalInputDetectionService:D FloatingBallService:D` 查看调试日志
+- 🔍 GlobalInputDetectionService 提供基本的软键盘状态检测日志
+- 🔍 FloatingBallService 提供悬浮球显示/隐藏操作日志
+- 🔍 使用 `adb logcat -s GlobalInputDetectionService FloatingBallService` 查看关键日志
+- 🔍 简化版去除了多余的调试信息，专注核心功能
 
 ### 设备兼容性测试
 - [ ] Android 7.0+ (API 24+)

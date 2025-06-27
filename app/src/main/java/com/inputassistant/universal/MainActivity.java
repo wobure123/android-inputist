@@ -302,8 +302,8 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
                 .setNeutralButton("测试悬浮球", (dialog, which) -> {
                     testFloatingBall();
                 })
-                .setNegativeButton("权限设置", (dialog, which) -> {
-                    showPermissionManagementDialog();
+                .setNegativeButton("强制显示", (dialog, which) -> {
+                    forceShowFloatingBall();
                 })
                 .show();
     }
@@ -500,9 +500,11 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
             
             // 启动悬浮球服务进行测试
             try {
-                Intent serviceIntent = new Intent(this, com.inputassistant.universal.service.GlobalInputDetectionService.class);
-                // 注意：无障碍服务不能手动启动，只能通过系统启动
-                result.append("\n\n💡 提示：请在其他应用中点击输入框来测试悬浮球。");
+                Intent serviceIntent = new Intent(this, com.inputassistant.universal.floating.FloatingBallService.class);
+                startService(serviceIntent);
+                result.append("\n\n✅ 悬浮球服务已启动");
+                result.append("\n💡 现在可以到其他应用测试输入框检测");
+                result.append("\n🔍 查看日志：adb logcat -s GlobalInputDetectionService");
             } catch (Exception e) {
                 result.append("\n\n⚠️ 启动服务失败：").append(e.getMessage());
             }
@@ -515,5 +517,73 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
                 .setMessage(result.toString())
                 .setPositiveButton("我知道了", null)
                 .show();
+    }
+    
+    /**
+     * 强制显示悬浮球（用于测试）
+     */
+    private void forceShowFloatingBall() {
+        boolean hasOverlay = PermissionHelper.hasOverlayPermission(this);
+        
+        if (!hasOverlay) {
+            showToast("❌ 需要悬浮窗权限");
+            return;
+        }
+        
+        try {
+            // 直接启动悬浮球服务并显示
+            Intent serviceIntent = new Intent(this, com.inputassistant.universal.floating.FloatingBallService.class);
+            startService(serviceIntent);
+            
+            // 延迟一点后尝试绑定服务并显示悬浮球
+            postDelayed(() -> {
+                bindFloatingBallForTest();
+            }, 1000);
+            
+            showToast("🎈 正在强制显示悬浮球...");
+            
+        } catch (Exception e) {
+            showToast("❌ 强制显示失败：" + e.getMessage());
+            Log.e("MainActivity", "Force show floating ball failed", e);
+        }
+    }
+    
+    /**
+     * 绑定悬浮球服务进行测试
+     */
+    private void bindFloatingBallForTest() {
+        Intent serviceIntent = new Intent(this, com.inputassistant.universal.floating.FloatingBallService.class);
+        bindService(serviceIntent, new android.content.ServiceConnection() {
+            @Override
+            public void onServiceConnected(android.content.ComponentName name, android.os.IBinder service) {
+                try {
+                    com.inputassistant.universal.floating.FloatingBallService.FloatingBallBinder binder = 
+                        (com.inputassistant.universal.floating.FloatingBallService.FloatingBallBinder) service;
+                    com.inputassistant.universal.floating.FloatingBallService floatingBallService = binder.getService();
+                    
+                    // 强制显示悬浮球
+                    floatingBallService.showFloatingBall();
+                    showToast("✅ 悬浮球已强制显示");
+                    
+                    // 延迟后解绑服务
+                    postDelayed(() -> {
+                        try {
+                            unbindService(this);
+                        } catch (Exception e) {
+                            Log.w("MainActivity", "Unbind service failed", e);
+                        }
+                    }, 1000);
+                    
+                } catch (Exception e) {
+                    showToast("❌ 显示悬浮球失败：" + e.getMessage());
+                    Log.e("MainActivity", "Show floating ball failed", e);
+                }
+            }
+
+            @Override
+            public void onServiceDisconnected(android.content.ComponentName name) {
+                Log.d("MainActivity", "FloatingBallService disconnected");
+            }
+        }, Context.BIND_AUTO_CREATE);
     }
 }
