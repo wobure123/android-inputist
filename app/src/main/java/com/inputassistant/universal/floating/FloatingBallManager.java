@@ -56,9 +56,22 @@ public class FloatingBallManager {
         this.windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         this.positionPrefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         
-        initScreenSize();
-        initFloatingBall();
-        initFloatingMenu();
+        Log.d(TAG, "FloatingBallManager initializing...");
+        
+        try {
+            initScreenSize();
+            Log.d(TAG, "Screen size initialized: " + screenWidth + "x" + screenHeight);
+            
+            initFloatingBall();
+            Log.d(TAG, "Floating ball initialized");
+            
+            initFloatingMenu();
+            Log.d(TAG, "Floating menu initialized");
+            
+            Log.i(TAG, "FloatingBallManager initialization completed successfully");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to initialize FloatingBallManager", e);
+        }
     }
     
     /**
@@ -141,24 +154,67 @@ public class FloatingBallManager {
      * 显示悬浮球
      */
     public void show() {
-        if (isShowing || !PermissionHelper.hasOverlayPermission(context)) {
-            Log.w(TAG, "Cannot show floating ball: already showing=" + isShowing + 
-                  ", hasPermission=" + PermissionHelper.hasOverlayPermission(context));
+        Log.d(TAG, "show() called - Current state: isShowing=" + isShowing);
+        
+        // 检查权限
+        boolean hasPermission = PermissionHelper.hasOverlayPermission(context);
+        Log.d(TAG, "Overlay permission check: " + hasPermission);
+        
+        if (isShowing) {
+            Log.w(TAG, "Floating ball already showing, skipping");
+            return;
+        }
+        
+        if (!hasPermission) {
+            Log.e(TAG, "No overlay permission, cannot show floating ball");
+            return;
+        }
+        
+        // 检查组件状态
+        Log.d(TAG, "Component check - windowManager: " + (windowManager != null) + 
+                  ", floatingBallView: " + (floatingBallView != null) + 
+                  ", ballParams: " + (ballParams != null));
+        
+        if (windowManager == null || floatingBallView == null || ballParams == null) {
+            Log.e(TAG, "Required components are null, cannot show floating ball");
             return;
         }
         
         try {
+            Log.d(TAG, "Adding floating ball view to window manager...");
             windowManager.addView(floatingBallView, ballParams);
             isShowing = true;
+            
+            Log.d(TAG, "Floating ball view added, starting animation...");
             floatingBallView.showWithAnimation();
             
             // 立即更新状态显示
             floatingBallView.updateStatus(true);
             
-            Log.d(TAG, "Floating ball shown successfully");
+            Log.i(TAG, "Floating ball shown successfully");
         } catch (Exception e) {
             Log.e(TAG, "Failed to show floating ball", e);
+            Log.e(TAG, "Device info: " + Build.MANUFACTURER + " " + Build.MODEL + 
+                      " (Android " + Build.VERSION.RELEASE + ", API " + Build.VERSION.SDK_INT + ")");
+            
+            // 重置状态
             isShowing = false;
+            
+            // 尝试重新创建视图
+            try {
+                Log.d(TAG, "Attempting to recreate floating ball view...");
+                initFloatingBall();
+                
+                // 再次尝试显示
+                windowManager.addView(floatingBallView, ballParams);
+                isShowing = true;
+                floatingBallView.showWithAnimation();
+                floatingBallView.updateStatus(true);
+                
+                Log.i(TAG, "Floating ball shown successfully after recreation");
+            } catch (Exception retryException) {
+                Log.e(TAG, "Failed to show floating ball even after recreation", retryException);
+            }
         }
     }
     

@@ -46,6 +46,11 @@ public class KeyboardAwareFloatingBallService extends Service {
     private int screenHeight = 0;
     private ViewTreeObserver.OnGlobalLayoutListener layoutListener;
     
+    // 防抖动机制
+    private android.os.Handler stateHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private Runnable pendingStateChange = null;
+    private static final long STATE_CHANGE_DELAY = 300; // 300ms 延迟避免快速切换
+    
     // Binder类，用于与其他组件通信
     public class KeyboardAwareBinder extends Binder {
         public KeyboardAwareFloatingBallService getService() {
@@ -98,16 +103,36 @@ public class KeyboardAwareFloatingBallService extends Service {
         
         // 初始化组件
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-        floatingBallManager = new FloatingBallManager(this);
+        Log.d(TAG, "WindowManager initialized");
+        
+        try {
+            floatingBallManager = new FloatingBallManager(this);
+            Log.i(TAG, "FloatingBallManager created successfully");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to create FloatingBallManager", e);
+            stopSelf();
+            return;
+        }
         
         // 设置悬浮球点击监听器
         floatingBallManager.setOnFloatingBallClickListener(this::onFloatingBallClicked);
+        Log.d(TAG, "Click listener set");
         
         // 初始化键盘检测
         initKeyboardDetection();
         
         // 获取当前输入法
         updateCurrentInputMethod();
+        
+        // 测试：立即尝试显示悬浮球（用于调试）
+        if (floatingBallManager != null) {
+            Log.d(TAG, "Testing: Attempting to show floating ball immediately for debugging");
+            android.os.Handler testHandler = new android.os.Handler(getMainLooper());
+            testHandler.postDelayed(() -> {
+                Log.d(TAG, "Test: Forcing floating ball display");
+                showFloatingBall();
+            }, 1000); // 延迟1秒显示
+        }
     }
 
     @Override
@@ -263,22 +288,38 @@ public class KeyboardAwareFloatingBallService extends Service {
      */
     private void handleKeyboardStateChange(boolean isVisible) {
         if (isKeyboardVisible == isVisible) {
+            Log.d(TAG, "Keyboard state unchanged: " + isVisible);
             return; // 状态未变化
         }
         
-        isKeyboardVisible = isVisible;
-        updateCurrentInputMethod();
-        
-        Log.i(TAG, "Keyboard state changed: visible=" + isVisible + 
-                  ", currentIME=" + currentInputMethod);
-        
-        if (isVisible && !isInputistIME(currentInputMethod)) {
-            // 键盘弹出且不是Inputist输入法，显示悬浮球
-            showFloatingBall();
-        } else {
-            // 键盘隐藏或是Inputist输入法，隐藏悬浮球
-            hideFloatingBall();
+        // 防抖动处理
+        if (pendingStateChange != null) {
+            stateHandler.removeCallbacks(pendingStateChange);
         }
+        
+        pendingStateChange = () -> {
+            isKeyboardVisible = isVisible;
+            updateCurrentInputMethod();
+            
+            boolean isInputist = isInputistIME(currentInputMethod);
+            
+            Log.i(TAG, "Keyboard state changed: visible=" + isVisible + 
+                      ", currentIME=" + currentInputMethod + 
+                      ", isInputist=" + isInputist);
+            
+            if (isVisible && !isInputist) {
+                // 键盘弹出且不是Inputist输入法，显示悬浮球
+                Log.i(TAG, "Should show floating ball: keyboard visible and not Inputist IME");
+                showFloatingBall();
+            } else {
+                // 键盘隐藏或是Inputist输入法，隐藏悬浮球
+                Log.i(TAG, "Should hide floating ball: keyboard hidden=" + !isVisible + " or isInputist=" + isInputist);
+                hideFloatingBall();
+            }
+        };
+        
+        // 延迟执行防抖动任务
+        stateHandler.postDelayed(pendingStateChange, STATE_CHANGE_DELAY);
     }
     
     /**
@@ -371,9 +412,16 @@ public class KeyboardAwareFloatingBallService extends Service {
      * 显示悬浮球
      */
     private void showFloatingBall() {
+        Log.d(TAG, "showFloatingBall() called - Manager: " + (floatingBallManager != null) + 
+                  ", Showing: " + (floatingBallManager != null && floatingBallManager.isShowing()));
+        
         if (floatingBallManager != null && !floatingBallManager.isShowing()) {
             floatingBallManager.show();
-            Log.d(TAG, "Floating ball shown");
+            Log.i(TAG, "Floating ball show command sent");
+        } else if (floatingBallManager == null) {
+            Log.e(TAG, "FloatingBallManager is null, cannot show floating ball");
+        } else {
+            Log.d(TAG, "Floating ball already showing, skipping");
         }
     }
     
@@ -381,9 +429,16 @@ public class KeyboardAwareFloatingBallService extends Service {
      * 隐藏悬浮球
      */
     private void hideFloatingBall() {
+        Log.d(TAG, "hideFloatingBall() called - Manager: " + (floatingBallManager != null) + 
+                  ", Showing: " + (floatingBallManager != null && floatingBallManager.isShowing()));
+        
         if (floatingBallManager != null && floatingBallManager.isShowing()) {
             floatingBallManager.hide();
-            Log.d(TAG, "Floating ball hidden");
+            Log.i(TAG, "Floating ball hide command sent");
+        } else if (floatingBallManager == null) {
+            Log.e(TAG, "FloatingBallManager is null, cannot hide floating ball");
+        } else {
+            Log.d(TAG, "Floating ball not showing, skipping hide");
         }
     }
     

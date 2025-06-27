@@ -159,10 +159,14 @@ public class FloatingBallView extends FrameLayout {
      * 显示动画
      */
     public void showWithAnimation() {
+        Log.d(TAG, "showWithAnimation() called");
+        
         setVisibility(View.VISIBLE);
         setAlpha(0f);
         setScaleX(0.5f);
         setScaleY(0.5f);
+        
+        Log.d(TAG, "Starting show animation - visibility set to VISIBLE");
         
         animate()
             .alpha(0.8f)
@@ -170,6 +174,8 @@ public class FloatingBallView extends FrameLayout {
             .scaleY(1.0f)
             .setDuration(300)
             .setInterpolator(new DecelerateInterpolator())
+            .withStartAction(() -> Log.d(TAG, "Show animation started"))
+            .withEndAction(() -> Log.d(TAG, "Show animation completed"))
             .start();
     }
     
