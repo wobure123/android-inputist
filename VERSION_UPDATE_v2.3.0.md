@@ -16,18 +16,20 @@
 ## 🚀 新版本特性 v2.3.0
 
 ### 🎈 智能悬浮球功能
-- ⚡ 输入框激活时自动显示悬浮球
+- ⚡ **全局输入检测** - 任何输入法激活输入框时都会显示悬浮球
 - 🚀 一键快速切换到输入法助手
 - 🎨 支持拖拽移动和磁性吸附到屏幕边缘
 - 🎛️ 点击悬浮球显示快捷菜单
-- 🔒 智能权限管理和用户引导
+- 🔒 智能权限管理和用户引导（悬浮窗 + 辅助功能）
 - 💾 位置记忆功能，记住用户习惯位置
+- 🌐 **不依赖Inputist输入法** - 与任何输入法配合使用
 
 ### 🛠️ 技术架构优化
-- 🎯 基于InputMethodService生命周期的轻量级实现
-- 🔧 无需辅助功能权限，仅需悬浮窗权限
+- 🎯 **全局监听架构** - 基于辅助功能服务的全局输入检测
+- 🔧 支持悬浮窗权限 + 辅助功能权限的双重验证
 - ⚡ 极低资源消耗，按需启动
 - 🏗️ 模块化设计，易于扩展和维护
+- 🌐 **输入法无关性** - 不依赖特定输入法，与任何输入法兼容
 
 ### 🎨 新增UI组件
 - 🎈 FloatingBallView - 悬浮球视图
@@ -35,6 +37,8 @@
 - 🎛️ FloatingBallManager - 悬浮球管理器
 - 🛠️ PermissionHelper - 权限管理工具
 - 🔧 InputMethodHelper - 输入法切换工具
+- 🌐 GlobalInputDetectionService - 全局输入检测服务
+- 🔐 AccessibilityHelper - 辅助功能权限管理工具
 
 ### 📱 界面优化
 - 🏷️ 主界面标题自动显示版本号（如：通用输入改写助手 v2.3.0）
@@ -62,10 +66,23 @@ versionName "2.3.0"  // 新增智能悬浮球功能
 
 ### 服务注册
 ```xml
-<!-- 新增悬浮球服务 -->
+<!-- 悬浮球服务 -->
 <service
     android:name=".floating.FloatingBallService"
     android:exported="false" />
+    
+<!-- 全局输入检测服务（辅助功能） -->
+<service
+    android:name=".service.GlobalInputDetectionService"
+    android:exported="true"
+    android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+    <intent-filter>
+        <action android:name="android.accessibilityservice.AccessibilityService" />
+    </intent-filter>
+    <meta-data
+        android:name="android.accessibilityservice"
+        android:resource="@xml/accessibility_service_config" />
+</service>
 ```
 
 ## 🔄 向后兼容性
@@ -85,9 +102,10 @@ versionName "2.3.0"  // 新增智能悬浮球功能
 
 ### 用户升级步骤
 1. **安装新版本** - 覆盖安装或全新安装
-2. **体验悬浮球** - 点击主界面"悬浮球设置"
-3. **授予权限** - 根据引导开启悬浮窗权限
-4. **享受便捷** - 在任意应用中体验智能悬浮球
+2. **体验悬浮球** - 点击主界面"🎈 悬浮球设置"
+3. **授予权限** - 根据引导开启悬浮窗权限和辅助功能权限
+4. **启用悬浮球** - 在设置对话框中启用悬浮球功能
+5. **享受便捷** - 在任意应用中体验智能悬浮球（无需切换到Inputist输入法）
 
 ### 开发者注意事项
 - 新增了多个模块，注意代码审查
@@ -99,9 +117,12 @@ versionName "2.3.0"  // 新增智能悬浮球功能
 ### 功能测试
 - [ ] 悬浮球显示/隐藏逻辑
 - [ ] 拖拽和磁性吸附
-- [ ] 权限申请流程
+- [ ] 悬浮窗权限申请流程
+- [ ] 辅助功能权限申请流程
+- [ ] 全局输入框检测（在不同应用中测试）
 - [ ] 输入法切换功能
 - [ ] 与现有功能的兼容性
+- [ ] 悬浮球启用/禁用开关
 
 ### 设备兼容性测试
 - [ ] Android 7.0+ (API 24+)

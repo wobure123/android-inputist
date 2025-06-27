@@ -26,6 +26,7 @@ public class SettingsRepository {
     private static final String KEY_ACTIONS_JSON = "actions_json";
     private static final String KEY_PREVIOUS_IME = "previous_ime"; // 保存上一个输入法
     private static final String KEY_TEXT_MODE = "text_processing_mode"; // 文本处理模式
+    private static final String KEY_FLOATING_BALL_ENABLED = "floating_ball_enabled"; // 悬浮球启用状态
 
     private final SharedPreferences sharedPreferences;
     private final Gson gson;
@@ -129,6 +130,15 @@ public class SettingsRepository {
 
     public String getTextProcessingModeDescription() {
         return isReplaceMode() ? "替换模式" : "拼接模式";
+    }
+
+    // 悬浮球相关方法
+    public void setFloatingBallEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(KEY_FLOATING_BALL_ENABLED, enabled).apply();
+    }
+
+    public boolean isFloatingBallEnabled() {
+        return sharedPreferences.getBoolean(KEY_FLOATING_BALL_ENABLED, false); // 默认关闭
     }
 
     // 清除所有数据（用于重置或调试）

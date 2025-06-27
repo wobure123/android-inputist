@@ -3,6 +3,7 @@
     <string name="app_name">Inputist</string>
     <string name="ime_name">Inputist</string>
     <string name="main_title">通用输入改写助手</string>
+    <string name="accessibility_service_description">检测输入框激活状态，在任何应用中显示智能悬浮球助手</string>
     <string name="action_edit">编辑</string>
     <string name="action_delete">删除</string>
     <string name="action_add">添加</string>

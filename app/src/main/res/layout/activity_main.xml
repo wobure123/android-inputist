@@ -190,9 +190,10 @@
             android:id="@+id/btn_floating_ball_settings"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="悬浮球设置"
-            android:layout_marginBottom="16dp"
-            style="@android:style/Widget.Material.Button.Borderless" />
+            android:text="🎈 悬浮球设置"
+            android:backgroundTint="@color/secondary_color"
+            android:textColor="@android:color/white"
+            android:layout_marginBottom="8dp" />
 
         <!-- 添加动作按钮 -->
         <Button

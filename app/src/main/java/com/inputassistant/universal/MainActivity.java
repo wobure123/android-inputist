@@ -14,6 +14,7 @@ import com.inputassistant.universal.adapter.ActionAdapter;
 import com.inputassistant.universal.model.Action;
 import com.inputassistant.universal.repository.SettingsRepository;
 import com.inputassistant.universal.utils.PermissionHelper;
+import com.inputassistant.universal.utils.AccessibilityHelper;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -254,30 +255,33 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
      * 打开悬浮球设置
      */
     private void openFloatingBallSettings() {
-        // 检查悬浮窗权限
-        PermissionHelper.checkAndRequestPermissions(this, new PermissionHelper.PermissionCallback() {
-            @Override
-            public void onPermissionGranted() {
-                showFloatingBallSettingsDialog();
-            }
-
-            @Override
-            public void onPermissionDenied() {
-                // 权限被拒绝，显示说明对话框
-                showFloatingBallPermissionDialog();
-            }
-        });
+        // 首先检查悬浮窗权限
+        if (!PermissionHelper.hasOverlayPermission(this)) {
+            showFloatingBallPermissionDialog();
+            return;
+        }
+        
+        // 检查辅助功能权限
+        if (!AccessibilityHelper.isOurAccessibilityServiceEnabled(this)) {
+            showAccessibilityPermissionDialog();
+            return;
+        }
+        
+        // 权限都已获得，显示功能设置对话框
+        showFloatingBallSettingsDialog();
     }
     
     /**
      * 显示悬浮球设置对话框
      */
     private void showFloatingBallSettingsDialog() {
+        boolean isEnabled = settingsRepository.isFloatingBallEnabled();
+        
         new AlertDialog.Builder(this)
-                .setTitle("悬浮球功能")
-                .setMessage("悬浮球功能已启用！\n\n" +
+                .setTitle("🎈 悬浮球功能设置")
+                .setMessage("当前状态：" + (isEnabled ? "✅ 已启用" : "❌ 已禁用") + "\n\n" +
                            "🎯 功能说明：\n" +
-                           "• 点击任意输入框时自动显示悬浮球\n" +
+                           "• 在任何应用的输入框激活时自动显示悬浮球\n" +
                            "• 点击悬浮球快速切换到输入法助手\n" +
                            "• 输入完成后悬浮球自动隐藏\n" +
                            "• 支持拖拽和磁性吸附\n\n" +
@@ -285,10 +289,72 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
                            "1. 在任意应用中点击输入框\n" +
                            "2. 悬浮球会自动出现\n" +
                            "3. 点击悬浮球即可快速切换输入法")
-                .setPositiveButton("我知道了", null)
-                .setNegativeButton("权限设置", (dialog, which) -> {
-                    PermissionHelper.openOverlaySettings(this);
+                .setPositiveButton(isEnabled ? "禁用悬浮球" : "启用悬浮球", (dialog, which) -> {
+                    toggleFloatingBall(!isEnabled);
                 })
+                .setNeutralButton("权限设置", (dialog, which) -> {
+                    showPermissionManagementDialog();
+                })
+                .setNegativeButton("取消", null)
+                .show();
+    }
+    
+    /**
+     * 切换悬浮球启用状态
+     */
+    private void toggleFloatingBall(boolean enable) {
+        settingsRepository.setFloatingBallEnabled(enable);
+        showToast(enable ? "悬浮球已启用" : "悬浮球已禁用");
+    }
+    
+    /**
+     * 显示权限管理对话框
+     */
+    private void showPermissionManagementDialog() {
+        boolean hasOverlay = PermissionHelper.hasOverlayPermission(this);
+        boolean hasAccessibility = AccessibilityHelper.isOurAccessibilityServiceEnabled(this);
+        
+        String message = "权限状态检查：\n\n" +
+                        "🔑 悬浮窗权限：" + (hasOverlay ? "✅ 已授予" : "❌ 未授予") + "\n" +
+                        "🔑 辅助功能权限：" + (hasAccessibility ? "✅ 已启用" : "❌ 未启用") + "\n\n" +
+                        "悬浮球功能需要两个权限都启用才能正常工作。";
+        
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
+                .setTitle("权限管理")
+                .setMessage(message);
+                
+        if (!hasOverlay) {
+            builder.setPositiveButton("设置悬浮窗权限", (dialog, which) -> {
+                PermissionHelper.openOverlaySettings(this);
+            });
+        }
+        
+        if (!hasAccessibility) {
+            builder.setNeutralButton("设置辅助功能", (dialog, which) -> {
+                AccessibilityHelper.openAccessibilitySettings(this);
+            });
+        }
+        
+        builder.setNegativeButton("取消", null).show();
+    }
+    
+    /**
+     * 显示辅助功能权限说明对话框
+     */
+    private void showAccessibilityPermissionDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("需要辅助功能权限")
+                .setMessage("悬浮球功能需要辅助功能权限来检测全局输入框状态。\n\n" +
+                           "✨ 开启后，您就可以：\n" +
+                           "• 在任何应用中自动检测输入框\n" +
+                           "• 享受智能悬浮球便捷体验\n" +
+                           "• 无需手动切换输入法\n\n" +
+                           "🔒 隐私说明：\n" +
+                           "我们只检测输入框状态，不收集任何输入内容。")
+                .setPositiveButton("去设置", (dialog, which) -> {
+                    AccessibilityHelper.openAccessibilitySettings(this);
+                })
+                .setNegativeButton("取消", null)
                 .show();
     }
     

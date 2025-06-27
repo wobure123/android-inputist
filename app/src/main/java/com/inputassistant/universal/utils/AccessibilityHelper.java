@@ -1,0 +1,68 @@
+package com.inputassistant.universal.utils;
+
+import android.content.Context;
+import android.content.Intent;
+import android.provider.Settings;
+import android.text.TextUtils;
+
+/**
+ * 辅助功能权限管理工具
+ */
+public class AccessibilityHelper {
+    
+    /**
+     * 检查辅助功能服务是否已启用
+     */
+    public static boolean isAccessibilityServiceEnabled(Context context, String serviceName) {
+        String settingValue = Settings.Secure.getString(
+                context.getContentResolver(),
+                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        );
+        
+        if (settingValue != null) {
+            String[] enabledServices = settingValue.split(":");
+            for (String enabledService : enabledServices) {
+                if (enabledService.equals(serviceName)) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * 检查我们的辅助功能服务是否已启用
+     */
+    public static boolean isOurAccessibilityServiceEnabled(Context context) {
+        String serviceName = context.getPackageName() + 
+                "/.service.GlobalInputDetectionService";
+        return isAccessibilityServiceEnabled(context, serviceName);
+    }
+    
+    /**
+     * 打开辅助功能设置页面
+     */
+    public static void openAccessibilitySettings(Context context) {
+        Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(intent);
+    }
+    
+    /**
+     * 检查辅助功能总开关是否启用
+     */
+    public static boolean isAccessibilityEnabled(Context context) {
+        int accessibilityEnabled = 0;
+        try {
+            accessibilityEnabled = Settings.Secure.getInt(
+                    context.getContentResolver(),
+                    Settings.Secure.ACCESSIBILITY_ENABLED
+            );
+        } catch (Settings.SettingNotFoundException e) {
+            // 设置未找到，表示未启用
+        }
+        
+        return accessibilityEnabled == 1;
+    }
+}

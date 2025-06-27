@@ -67,6 +67,19 @@
         <service
             android:name=".floating.FloatingBallService"
             android:exported="false" />
+            
+        <!-- 全局输入检测服务（辅助功能） -->
+        <service
+            android:name=".service.GlobalInputDetectionService"
+            android:exported="true"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
         
     </application>
 
