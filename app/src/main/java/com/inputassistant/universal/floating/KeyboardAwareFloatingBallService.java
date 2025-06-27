@@ -320,9 +320,11 @@ public class KeyboardAwareFloatingBallService extends Service {
             return; // 状态未变化
         }
         
-        // 记录输入活动
+        // 记录真实的输入活动（只有WindowInsets或Layout检测到的才算）
         if (isVisible) {
             recordInputActivity();
+            Log.d(TAG, "Real keyboard activity recorded via " + 
+                      (Build.VERSION.SDK_INT >= 30 ? "WindowInsets" : "ViewTreeObserver"));
         }
         
         // 防抖动处理
@@ -638,6 +640,8 @@ public class KeyboardAwareFloatingBallService extends Service {
                         shouldShow = detectXiaomiKeyboardState(isActive);
                         Log.v(TAG, "Xiaomi enhanced detection - IME: " + currentInputMethod + 
                                   ", isActive: " + isActive +
+                                  ", WindowInsets: " + isKeyboardVisible +
+                                  ", hasRecent: " + hasRecentInputActivity() +
                                   ", consecutiveActive: " + consecutiveActiveCount +
                                   ", consecutiveInactive: " + consecutiveInactiveCount +
                                   ", shouldShow: " + shouldShow);
@@ -671,7 +675,7 @@ public class KeyboardAwareFloatingBallService extends Service {
     
     /**
      * 小米设备专用键盘状态检测
-     * 使用多信号融合和连续性检测提高准确性
+     * 使用多信号融合和严格的软键盘状态判断
      */
     private boolean detectXiaomiKeyboardState(boolean isActive) {
         long currentTime = System.currentTimeMillis();
@@ -683,7 +687,33 @@ public class KeyboardAwareFloatingBallService extends Service {
             return false;
         }
         
-        // 2. 统计连续的active/inactive状态
+        // 2. 严格检查：不仅要isActive，还要有真实的输入活动
+        boolean hasRealKeyboardActivity = false;
+        
+        // 检查多个信号来确认软键盘真的弹出了：
+        // - WindowInsets检测到键盘
+        // - 有最近的输入活动记录
+        // - isActive状态
+        if (isKeyboardVisible) {
+            // WindowInsets检测到键盘，这是最可靠的信号
+            hasRealKeyboardActivity = true;
+            recordInputActivity(); // 记录这次活动
+        } else if (hasRecentInputActivity()) {
+            // 有最近的输入活动记录
+            hasRealKeyboardActivity = true;
+        }
+        
+        // 3. 只有当有真实键盘活动时，才考虑显示悬浮球
+        if (!hasRealKeyboardActivity) {
+            // 没有真实的键盘活动，强制隐藏
+            consecutiveActiveCount = 0;
+            consecutiveInactiveCount = Math.max(consecutiveInactiveCount, XIAOMI_CONFIDENCE_THRESHOLD);
+            Log.d(TAG, "Xiaomi: No real keyboard activity detected, forcing hide (isActive=" + isActive + 
+                      ", WindowInsets=" + isKeyboardVisible + ", hasRecent=" + hasRecentInputActivity() + ")");
+            return false;
+        }
+        
+        // 4. 有真实键盘活动时，使用连续性检测
         if (isActive) {
             consecutiveActiveCount++;
             consecutiveInactiveCount = 0;
@@ -692,11 +722,11 @@ public class KeyboardAwareFloatingBallService extends Service {
             consecutiveActiveCount = 0;
         }
         
-        // 3. 基于连续性判断状态
+        // 5. 基于连续性判断状态
         boolean newState = false;
         
         if (consecutiveActiveCount >= XIAOMI_CONFIDENCE_THRESHOLD) {
-            // 连续检测到active，认为键盘弹出
+            // 连续检测到active且有真实键盘活动，认为键盘弹出
             newState = true;
         } else if (consecutiveInactiveCount >= XIAOMI_CONFIDENCE_THRESHOLD) {
             // 连续检测到inactive，认为键盘隐藏
@@ -706,24 +736,18 @@ public class KeyboardAwareFloatingBallService extends Service {
             newState = lastXiaomiKeyboardState;
         }
         
-        // 4. 状态变化时需要稳定一段时间才确认
+        // 6. 状态变化时需要稳定一段时间才确认
         if (newState != lastXiaomiKeyboardState) {
             if (currentTime - lastXiaomiStateChangeTime > XIAOMI_STATE_STABLE_DURATION) {
                 Log.d(TAG, "Xiaomi keyboard state confirmed change: " + lastXiaomiKeyboardState + " -> " + newState +
-                          " (active: " + consecutiveActiveCount + ", inactive: " + consecutiveInactiveCount + ")");
+                          " (active: " + consecutiveActiveCount + ", inactive: " + consecutiveInactiveCount + 
+                          ", hasRealActivity: " + hasRealKeyboardActivity + ")");
                 lastXiaomiKeyboardState = newState;
                 lastXiaomiStateChangeTime = currentTime;
             }
         } else {
             // 状态稳定，更新时间戳
             lastXiaomiStateChangeTime = currentTime;
-        }
-        
-        // 5. 额外的WindowInsets信号融合
-        if (isKeyboardVisible && !lastXiaomiKeyboardState) {
-            // 如果WindowInsets检测到键盘但我们的逻辑认为没有，倾向于显示
-            Log.d(TAG, "Xiaomi: WindowInsets override - showing floating ball due to insets detection");
-            return true;
         }
         
         return lastXiaomiKeyboardState;
