@@ -92,38 +92,11 @@ public class FloatingBallView extends FrameLayout {
         // 添加点击动画效果
         animateClick();
         
-        // 检查输入法状态并执行相应操作
-        InputMethodHelper.InputMethodStatus status = 
-            InputMethodHelper.checkInputMethodStatus(getContext());
-        
-        Log.d(TAG, "Current InputMethod status: " + status);
-            
-        switch (status) {
-            case NOT_ENABLED:
-                // 输入法未启用，引导用户去设置页面启用
-                Log.d(TAG, "InputMethod not enabled, opening main activity");
-                showToast("请先启用输入法助手");
-                openMainActivity();
-                break;
-                
-            case ENABLED_NOT_CURRENT:
-                // 输入法已启用但非当前，直接显示输入法选择器切换
-                Log.d(TAG, "InputMethod enabled but not current, showing picker");
-                showToast("请选择\"输入法助手\"");
-                InputMethodHelper.showInputMethodPicker(getContext());
-                break;
-                
-            case ENABLED_AND_CURRENT:
-                // 输入法已是当前，显示快捷菜单或直接打开主界面
-                Log.d(TAG, "InputMethod is current, showing quick menu");
-                if (manager != null) {
-                    manager.showQuickMenu();
-                } else {
-                    // 如果没有菜单管理器，直接打开主界面
-                    showToast("打开输入法助手");
-                    openMainActivity();
-                }
-                break;
+        // 直接调用管理器的点击事件，让服务统一处理
+        if (manager != null) {
+            manager.onFloatingBallClicked();
+        } else {
+            Log.e(TAG, "Manager is null, cannot handle click");
         }
     }
     

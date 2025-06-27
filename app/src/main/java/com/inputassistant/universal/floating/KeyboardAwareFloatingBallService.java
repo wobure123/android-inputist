@@ -56,6 +56,10 @@ public class KeyboardAwareFloatingBallService extends Service {
     private Runnable periodicCheckRunnable;
     private boolean isPeriodicCheckRunning = false;
     
+    // 输入活动检测
+    private long lastInputActivityTime = 0;
+    private static final long INPUT_ACTIVITY_TIMEOUT = 10000; // 10秒
+    
     // Binder类，用于与其他组件通信
     public class KeyboardAwareBinder extends Binder {
         public KeyboardAwareFloatingBallService getService() {
@@ -302,6 +306,11 @@ public class KeyboardAwareFloatingBallService extends Service {
             return; // 状态未变化
         }
         
+        // 记录输入活动
+        if (isVisible) {
+            recordInputActivity();
+        }
+        
         // 防抖动处理
         if (pendingStateChange != null) {
             stateHandler.removeCallbacks(pendingStateChange);
@@ -383,19 +392,19 @@ public class KeyboardAwareFloatingBallService extends Service {
         try {
             InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
             if (imm != null) {
-                // 这里需要根据您的输入法Service名称来调整
-                String inputistIme = "com.inputassistant.universal/.ime.TranslateInputMethodService";
-                
-                // 使用反射或Intent来切换输入法
-                Intent intent = new Intent(Settings.ACTION_INPUT_METHOD_SETTINGS);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                
-                // 或者尝试直接设置（需要权限）
-                // Settings.Secure.putString(getContentResolver(), 
-                //     Settings.Secure.DEFAULT_INPUT_METHOD, inputistIme);
-                
-                startActivity(intent);
                 Log.d(TAG, "Switching to Inputist IME");
+                
+                // 保存当前输入法作为previous
+                if (!isInputistIME(currentInputMethod)) {
+                    previousInputMethod = currentInputMethod;
+                    Log.d(TAG, "Saved previous IME: " + previousInputMethod);
+                }
+                
+                // 直接显示输入法选择器，用户可以快速选择Inputist
+                imm.showInputMethodPicker();
+                
+                // 可选：显示提示
+                showToast("请选择 \"通用输入改写助手\"");
             }
         } catch (Exception e) {
             Log.e(TAG, "Failed to switch to Inputist IME", e);
@@ -409,13 +418,31 @@ public class KeyboardAwareFloatingBallService extends Service {
         try {
             InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
             if (imm != null) {
-                // 尝试切换到上一个输入法
-                imm.switchToLastInputMethod(null);
                 Log.d(TAG, "Switching to previous IME: " + previousInputMethod);
+                
+                // 方法1：使用系统提供的切换到上一个输入法
+                boolean success = imm.switchToLastInputMethod(null);
+                
+                if (success) {
+                    Log.d(TAG, "Successfully switched to last IME");
+                    showToast("已切换回上一个输入法");
+                } else {
+                    Log.d(TAG, "switchToLastInputMethod failed, showing picker");
+                    // 如果失败，显示输入法选择器
+                    imm.showInputMethodPicker();
+                    showToast("请选择要使用的输入法");
+                }
             }
         } catch (Exception e) {
             Log.e(TAG, "Failed to switch to previous IME", e);
         }
+    }
+    
+    /**
+     * 显示提示消息
+     */
+    private void showToast(String message) {
+        android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_SHORT).show();
     }
     
     /**
@@ -579,12 +606,31 @@ public class KeyboardAwareFloatingBallService extends Service {
                     Log.d(TAG, "Periodic check - IME changed from " + previousIME + " to " + currentInputMethod);
                 }
                 
-                // 检查是否应该显示悬浮球
-                boolean shouldShow = isActive && !isInputistIME(currentInputMethod);
+                // 修正的检测逻辑：只在软键盘真正弹出时显示悬浮球
+                boolean shouldShow = false;
                 
-                Log.v(TAG, "Periodic check - IME active: " + isActive + 
-                          ", current: " + currentInputMethod + 
-                          ", should show: " + shouldShow);
+                // 如果不是Inputist输入法
+                if (!isInputistIME(currentInputMethod)) {
+                    // 对于小米设备，使用更严格的检测：
+                    // 1. 必须是第三方输入法
+                    // 2. 必须有实际的输入活动（通过isActive检测）
+                    if (Build.MANUFACTURER.toLowerCase().contains("xiaomi") || 
+                        Build.MANUFACTURER.toLowerCase().contains("redmi")) {
+                        
+                        // 小米设备：第三方输入法 + 有输入活动
+                        shouldShow = isCommonThirdPartyIME(currentInputMethod) && 
+                                   (isActive || hasRecentInputActivity());
+                        
+                        Log.v(TAG, "Xiaomi device - IME: " + currentInputMethod + 
+                                  ", isCommonThirdParty: " + isCommonThirdPartyIME(currentInputMethod) +
+                                  ", isActive: " + isActive +
+                                  ", shouldShow: " + shouldShow);
+                    } else {
+                        // 其他设备使用标准检测
+                        shouldShow = isActive;
+                        Log.v(TAG, "Standard device - IME active: " + isActive);
+                    }
+                }
                 
                 // 只有在状态真正改变时才处理
                 if (shouldShow != isKeyboardVisible) {
@@ -595,6 +641,28 @@ public class KeyboardAwareFloatingBallService extends Service {
         } catch (Exception e) {
             Log.e(TAG, "Error in InputMethodManager keyboard check", e);
         }
+    }
+    
+    /**
+     * 检查是否是常见的第三方输入法
+     */
+    private boolean isCommonThirdPartyIME(String ime) {
+        if (ime == null) return false;
+        
+        String imeLower = ime.toLowerCase();
+        
+        // 常见第三方输入法列表
+        return imeLower.contains("sogou") ||      // 搜狗输入法
+               imeLower.contains("baidu") ||      // 百度输入法
+               imeLower.contains("iflytek") ||    // 讯飞输入法
+               imeLower.contains("qq") ||         // QQ输入法
+               imeLower.contains("gboard") ||     // Google输入法
+               imeLower.contains("swiftkey") ||   // SwiftKey
+               imeLower.contains("samsung") ||    // 三星输入法
+               imeLower.contains("huawei") ||     // 华为输入法
+               imeLower.contains("xiaomi") ||     // 小米输入法
+               imeLower.contains("oppo") ||       // OPPO输入法
+               imeLower.contains("vivo");         // VIVO输入法
     }
 
     /**
@@ -609,5 +677,28 @@ public class KeyboardAwareFloatingBallService extends Service {
      */
     public String getCurrentInputMethod() {
         return currentInputMethod;
+    }
+    
+    /**
+     * 记录输入活动
+     */
+    private void recordInputActivity() {
+        lastInputActivityTime = System.currentTimeMillis();
+    }
+    
+    /**
+     * 检查是否有最近的输入活动
+     */
+    private boolean hasRecentInputActivity() {
+        long currentTime = System.currentTimeMillis();
+        boolean hasRecent = (currentTime - lastInputActivityTime) < INPUT_ACTIVITY_TIMEOUT;
+        
+        // 如果WindowInsets检测到键盘变化，记录为输入活动
+        if (isKeyboardVisible) {
+            recordInputActivity();
+            return true;
+        }
+        
+        return hasRecent;
     }
 }
