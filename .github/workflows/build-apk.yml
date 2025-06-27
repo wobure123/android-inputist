@@ -65,16 +65,47 @@ jobs:
         name: release-apk
         path: app/build/outputs/apk/release/app-release.apk
         
-    - name: Get version from build.gradle
+    - name: Read version and update document
       id: get_version
       run: |
         # 提取基础版本号，只从defaultConfig块中获取，避免获取到suffix
         VERSION_NAME=$(grep -A 10 "defaultConfig" app/build.gradle | grep "versionName" | sed 's/.*"\([^"]*\)".*/\1/')
         echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
         echo "Version: $VERSION_NAME"
+        
+        # 检查版本文档是否存在
+        VERSION_DOC="VERSION_UPDATE_v${VERSION_NAME}.md"
+        if [ -f "$VERSION_DOC" ]; then
+          echo "Found version document: $VERSION_DOC"
+          # 读取文档内容，保持原始格式
+          {
+            echo 'version_content<<EOF'
+            cat "$VERSION_DOC"
+            echo EOF
+          } >> $GITHUB_OUTPUT
+          echo "has_version_doc=true" >> $GITHUB_OUTPUT
+        else
+          echo "Version document not found: $VERSION_DOC"
+          echo "has_version_doc=false" >> $GITHUB_OUTPUT
+        fi
     
-    - name: Create Release
-      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    - name: Create Release (with version document)
+      if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') && steps.get_version.outputs.has_version_doc == 'true'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ steps.get_version.outputs.version_name }}
+        name: Release v${{ steps.get_version.outputs.version_name }}
+        body: ${{ steps.get_version.outputs.version_content }}
+        files: |
+          app/build/outputs/apk/debug/app-debug.apk
+          app/build/outputs/apk/release/app-release.apk
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Create Release (fallback template)
+      if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') && steps.get_version.outputs.has_version_doc == 'false'
       uses: softprops/action-gh-release@v1
       with:
         tag_name: v${{ steps.get_version.outputs.version_name }}
@@ -86,8 +117,8 @@ jobs:
           - 🔄 双模式文本处理（拼接/替换模式）
           - 🎛️ 主界面处理模式设置开关
           - 🎮 快捷操作栏（删除、空格、换行、切换）
-          - � 一键输入法切换器
-          - �📱 优化的用户界面和体验
+          - 🔄 一键输入法切换器
+          - 📱 优化的用户界面和体验
           
           ## 🐛 修复内容
           - 🐛 修复编译错误和构建问题

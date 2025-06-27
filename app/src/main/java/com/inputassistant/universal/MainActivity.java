@@ -35,6 +35,7 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
     private RecyclerView rvActions;
     private Button fabAddAction;  // 改为 Button 类型
     private TextView tvStatus;
+    private TextView tvMainTitle;  // 主标题视图
     private Switch switchTextMode;  // 文本处理模式切换开关
     private TextView tvModeDescription;  // 模式描述文本
     
@@ -64,8 +65,12 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
         rvActions = findViewById(R.id.rv_actions);
         fabAddAction = findViewById(R.id.fab_add_action);
         tvStatus = findViewById(R.id.tv_status);
+        tvMainTitle = findViewById(R.id.tv_main_title);
         switchTextMode = findViewById(R.id.switch_text_mode);
         tvModeDescription = findViewById(R.id.tv_mode_description);
+        
+        // 动态设置标题，包含版本号
+        setMainTitleWithVersion();
     }
 
     private void initRepository() {
@@ -309,5 +314,22 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
     protected void onResume() {
         super.onResume();
         updateStatus();
+    }
+
+    private void setMainTitleWithVersion() {
+        try {
+            // 获取版本名称
+            String versionName = getPackageManager()
+                    .getPackageInfo(getPackageName(), 0)
+                    .versionName;
+            
+            // 设置带版本号的标题
+            String titleWithVersion = getString(R.string.main_title) + " v" + versionName;
+            tvMainTitle.setText(titleWithVersion);
+            
+        } catch (Exception e) {
+            // 如果获取版本号失败，使用默认标题
+            tvMainTitle.setText(R.string.main_title);
+        }
     }
 }

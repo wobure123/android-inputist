@@ -16,9 +16,10 @@
 
         <!-- 标题 -->
         <TextView
+            android:id="@+id/tv_main_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="通用输入改写助手"
+            android:text="@string/main_title"
             android:textSize="24sp"
             android:textStyle="bold"
             android:gravity="center"
