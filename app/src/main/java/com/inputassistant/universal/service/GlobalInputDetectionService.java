@@ -56,8 +56,10 @@ public class GlobalInputDetectionService extends AccessibilityService {
         try {
             settingsRepository = new SettingsRepository(this);
             isFloatingBallEnabled = settingsRepository.isFloatingBallEnabled();
+            Log.d(TAG, "Floating ball enabled: " + isFloatingBallEnabled);
         } catch (GeneralSecurityException | IOException e) {
             Log.e(TAG, "Failed to initialize settings repository", e);
+            return;
         }
         
         // 配置辅助功能服务
@@ -70,18 +72,38 @@ public class GlobalInputDetectionService extends AccessibilityService {
                     AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS;
         setServiceInfo(info);
         
-        // 绑定悬浮球服务
-        bindFloatingBallService();
+        // 如果悬浮球已启用，则绑定悬浮球服务
+        if (isFloatingBallEnabled) {
+            Log.d(TAG, "Floating ball is enabled, binding service");
+            bindFloatingBallService();
+        } else {
+            Log.d(TAG, "Floating ball is disabled, not binding service");
+        }
     }
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        if (!isFloatingBallEnabled || !isFloatingBallServiceBound) {
+        // 实时检查悬浮球是否启用
+        try {
+            isFloatingBallEnabled = settingsRepository != null && settingsRepository.isFloatingBallEnabled();
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to check floating ball enabled status", e);
+            return;
+        }
+        
+        if (!isFloatingBallEnabled) {
+            Log.d(TAG, "Floating ball is disabled, ignoring event");
+            return;
+        }
+        
+        if (!isFloatingBallServiceBound) {
+            Log.d(TAG, "FloatingBallService not bound, trying to bind...");
+            bindFloatingBallService();
             return;
         }
         
         int eventType = event.getEventType();
-        Log.d(TAG, "Accessibility event: " + eventType);
+        Log.d(TAG, "Accessibility event: " + eventType + ", package: " + event.getPackageName());
         
         switch (eventType) {
             case AccessibilityEvent.TYPE_VIEW_FOCUSED:
@@ -215,8 +237,13 @@ public class GlobalInputDetectionService extends AccessibilityService {
      * 绑定悬浮球服务
      */
     private void bindFloatingBallService() {
-        Intent intent = new Intent(this, FloatingBallService.class);
-        bindService(intent, floatingBallConnection, Context.BIND_AUTO_CREATE);
+        if (!isFloatingBallServiceBound) {
+            Intent intent = new Intent(this, FloatingBallService.class);
+            // 先启动服务，再绑定
+            startService(intent);
+            boolean bound = bindService(intent, floatingBallConnection, Context.BIND_AUTO_CREATE);
+            Log.d(TAG, "Attempting to bind FloatingBallService, result: " + bound);
+        }
     }
     
     /**

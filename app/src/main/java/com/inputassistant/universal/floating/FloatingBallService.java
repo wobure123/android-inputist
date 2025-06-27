@@ -85,20 +85,38 @@ public class FloatingBallService extends Service {
      * 显示悬浮球
      */
     public void showFloatingBall() {
-        if (floatingBallManager != null && !floatingBallManager.isShowing()) {
-            floatingBallManager.show();
-            Log.d(TAG, "Floating ball shown");
+        Log.d(TAG, "showFloatingBall called");
+        if (floatingBallManager == null) {
+            Log.e(TAG, "FloatingBallManager is null");
+            return;
         }
+        
+        if (floatingBallManager.isShowing()) {
+            Log.d(TAG, "Floating ball is already showing");
+            return;
+        }
+        
+        floatingBallManager.show();
+        Log.d(TAG, "Floating ball show command executed");
     }
     
     /**
      * 隐藏悬浮球
      */
     public void hideFloatingBall() {
-        if (floatingBallManager != null && floatingBallManager.isShowing()) {
-            floatingBallManager.hide();
-            Log.d(TAG, "Floating ball hidden");
+        Log.d(TAG, "hideFloatingBall called");
+        if (floatingBallManager == null) {
+            Log.e(TAG, "FloatingBallManager is null");
+            return;
         }
+        
+        if (!floatingBallManager.isShowing()) {
+            Log.d(TAG, "Floating ball is already hidden");
+            return;
+        }
+        
+        floatingBallManager.hide();
+        Log.d(TAG, "Floating ball hide command executed");
     }
     
     /**

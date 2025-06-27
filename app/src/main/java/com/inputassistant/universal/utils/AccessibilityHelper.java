@@ -19,9 +19,13 @@ public class AccessibilityHelper {
                 Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
         );
         
+        android.util.Log.d("AccessibilityHelper", "All enabled services: " + settingValue);
+        android.util.Log.d("AccessibilityHelper", "Looking for service: " + serviceName);
+        
         if (settingValue != null) {
             String[] enabledServices = settingValue.split(":");
             for (String enabledService : enabledServices) {
+                android.util.Log.d("AccessibilityHelper", "Found service: " + enabledService);
                 if (enabledService.equals(serviceName)) {
                     return true;
                 }
@@ -35,9 +39,17 @@ public class AccessibilityHelper {
      * 检查我们的辅助功能服务是否已启用
      */
     public static boolean isOurAccessibilityServiceEnabled(Context context) {
+        // 正确的服务名称格式：包名/服务类全名
         String serviceName = context.getPackageName() + 
-                "/.service.GlobalInputDetectionService";
-        return isAccessibilityServiceEnabled(context, serviceName);
+                "/com.inputassistant.universal.service.GlobalInputDetectionService";
+        
+        // 添加调试日志
+        android.util.Log.d("AccessibilityHelper", "Checking service: " + serviceName);
+        
+        boolean enabled = isAccessibilityServiceEnabled(context, serviceName);
+        android.util.Log.d("AccessibilityHelper", "Service enabled: " + enabled);
+        
+        return enabled;
     }
     
     /**

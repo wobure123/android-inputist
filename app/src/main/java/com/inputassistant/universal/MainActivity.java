@@ -299,10 +299,12 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
                 .setPositiveButton(isEnabled ? "禁用悬浮球" : "启用悬浮球", (dialog, which) -> {
                     toggleFloatingBall(!isEnabled);
                 })
-                .setNeutralButton("权限设置", (dialog, which) -> {
+                .setNeutralButton("测试悬浮球", (dialog, which) -> {
+                    testFloatingBall();
+                })
+                .setNegativeButton("权限设置", (dialog, which) -> {
                     showPermissionManagementDialog();
                 })
-                .setNegativeButton("取消", null)
                 .show();
     }
     
@@ -476,5 +478,42 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
     private void initPermissionStates() {
         lastOverlayPermissionState = PermissionHelper.hasOverlayPermission(this);
         lastAccessibilityPermissionState = AccessibilityHelper.isOurAccessibilityServiceEnabled(this);
+    }
+    
+    /**
+     * 测试悬浮球功能
+     */
+    private void testFloatingBall() {
+        boolean hasOverlay = PermissionHelper.hasOverlayPermission(this);
+        boolean hasAccessibility = AccessibilityHelper.isOurAccessibilityServiceEnabled(this);
+        boolean isEnabled = settingsRepository.isFloatingBallEnabled();
+        
+        StringBuilder result = new StringBuilder();
+        result.append("🔍 悬浮球功能测试结果：\n\n");
+        result.append("🔑 悬浮窗权限：").append(hasOverlay ? "✅ 已授予" : "❌ 未授予").append("\n");
+        result.append("🔑 辅助功能权限：").append(hasAccessibility ? "✅ 已启用" : "❌ 未启用").append("\n");
+        result.append("🎈 悬浮球功能：").append(isEnabled ? "✅ 已启用" : "❌ 已禁用").append("\n\n");
+        
+        if (hasOverlay && hasAccessibility && isEnabled) {
+            result.append("🎉 所有条件都满足！\n");
+            result.append("请到其他应用中点击输入框测试。");
+            
+            // 启动悬浮球服务进行测试
+            try {
+                Intent serviceIntent = new Intent(this, com.inputassistant.universal.service.GlobalInputDetectionService.class);
+                // 注意：无障碍服务不能手动启动，只能通过系统启动
+                result.append("\n\n💡 提示：请在其他应用中点击输入框来测试悬浮球。");
+            } catch (Exception e) {
+                result.append("\n\n⚠️ 启动服务失败：").append(e.getMessage());
+            }
+        } else {
+            result.append("❌ 还有条件未满足，请按照提示完成配置。");
+        }
+        
+        new AlertDialog.Builder(this)
+                .setTitle("🧪 测试结果")
+                .setMessage(result.toString())
+                .setPositiveButton("我知道了", null)
+                .show();
     }
 }

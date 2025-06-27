@@ -115,14 +115,22 @@ versionName "2.3.0"  // 新增智能悬浮球功能
 ## 🧪 测试建议
 
 ### 功能测试
-- [ ] 悬浮球显示/隐藏逻辑
+- [ ] **权限配置测试** - 悬浮窗权限和辅助功能权限申请流程
+- [ ] **辅助功能服务** - 在设置→辅助功能→已下载应用中启用Inputist
+- [ ] **悬浮球显示/隐藏逻辑** - 在任何应用中点击输入框测试
+- [ ] **权限检测机制** - 返回应用后的权限状态提示  
+- [ ] **测试功能** - 使用主界面的"测试悬浮球"按钮
 - [ ] 拖拽和磁性吸附
-- [ ] 悬浮窗权限申请流程
-- [ ] 辅助功能权限申请流程
 - [ ] 全局输入框检测（在不同应用中测试）
 - [ ] 输入法切换功能
 - [ ] 与现有功能的兼容性
 - [ ] 悬浮球启用/禁用开关
+
+### 调试信息
+- 🔍 AccessibilityHelper 提供详细的权限检查日志
+- 🔍 GlobalInputDetectionService 提供事件处理日志
+- 🔍 FloatingBallService 提供显示/隐藏操作日志
+- 🔍 使用 `adb logcat -s AccessibilityHelper:D GlobalInputDetectionService:D FloatingBallService:D` 查看调试日志
 
 ### 设备兼容性测试
 - [ ] Android 7.0+ (API 24+)
