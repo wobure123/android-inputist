@@ -161,8 +161,16 @@ public class FloatingBallManager {
         Log.d(TAG, "Overlay permission check: " + hasPermission);
         
         if (isShowing) {
-            Log.w(TAG, "Floating ball already showing, skipping");
-            return;
+            Log.w(TAG, "Floating ball already showing, but let's verify the actual state...");
+            
+            // 验证视图是否真的已添加
+            if (floatingBallView != null && floatingBallView.getParent() != null) {
+                Log.w(TAG, "FloatingBall view is actually attached to window, skipping");
+                return;
+            } else {
+                Log.e(TAG, "isShowing=true but view not attached! Resetting state and trying again...");
+                isShowing = false; // 重置状态
+            }
         }
         
         if (!hasPermission) {
@@ -180,8 +188,17 @@ public class FloatingBallManager {
             return;
         }
         
+        // 检查视图状态
+        Log.d(TAG, "FloatingBallView state - parent: " + (floatingBallView.getParent() != null) + 
+                  ", visibility: " + floatingBallView.getVisibility() + 
+                  ", alpha: " + floatingBallView.getAlpha());
+        
         try {
             Log.d(TAG, "Adding floating ball view to window manager...");
+            Log.d(TAG, "Window params - type: " + ballParams.type + 
+                      ", flags: " + ballParams.flags + 
+                      ", position: (" + ballParams.x + "," + ballParams.y + ")");
+            
             windowManager.addView(floatingBallView, ballParams);
             isShowing = true;
             
@@ -443,5 +460,58 @@ public class FloatingBallManager {
         hide();
         floatingBallView = null;
         floatingMenuView = null;
+    }
+    
+    /**
+     * 强制重置状态（用于调试）
+     */
+    public void forceResetState() {
+        Log.d(TAG, "Force resetting state - current isShowing: " + isShowing);
+        
+        // 尝试移除可能存在的视图
+        if (floatingBallView != null && floatingBallView.getParent() != null) {
+            try {
+                windowManager.removeView(floatingBallView);
+                Log.d(TAG, "Removed existing floating ball view");
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to remove existing view", e);
+            }
+        }
+        
+        // 重置状态
+        isShowing = false;
+        isMenuShowing = false;
+        
+        Log.d(TAG, "State reset completed");
+    }
+    
+    /**
+     * 获取调试信息
+     */
+    public String getDebugInfo() {
+        StringBuilder info = new StringBuilder();
+        info.append("FloatingBallManager Debug Info:\n");
+        info.append("- isShowing: ").append(isShowing).append("\n");
+        info.append("- isMenuShowing: ").append(isMenuShowing).append("\n");
+        info.append("- windowManager: ").append(windowManager != null).append("\n");
+        info.append("- floatingBallView: ").append(floatingBallView != null).append("\n");
+        info.append("- ballParams: ").append(ballParams != null).append("\n");
+        
+        if (floatingBallView != null) {
+            info.append("- view parent: ").append(floatingBallView.getParent() != null).append("\n");
+            info.append("- view visibility: ").append(floatingBallView.getVisibility()).append("\n");
+            info.append("- view alpha: ").append(floatingBallView.getAlpha()).append("\n");
+        }
+        
+        info.append("- screen size: ").append(screenWidth).append("x").append(screenHeight).append("\n");
+        info.append("- permission: ").append(PermissionHelper.hasOverlayPermission(context)).append("\n");
+        
+        if (ballParams != null) {
+            info.append("- window type: ").append(ballParams.type).append("\n");
+            info.append("- window flags: ").append(ballParams.flags).append("\n");
+            info.append("- position: (").append(ballParams.x).append(",").append(ballParams.y).append(")\n");
+        }
+        
+        return info.toString();
     }
 }

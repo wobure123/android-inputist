@@ -123,16 +123,6 @@ public class KeyboardAwareFloatingBallService extends Service {
         
         // 获取当前输入法
         updateCurrentInputMethod();
-        
-        // 测试：立即尝试显示悬浮球（用于调试）
-        if (floatingBallManager != null) {
-            Log.d(TAG, "Testing: Attempting to show floating ball immediately for debugging");
-            android.os.Handler testHandler = new android.os.Handler(getMainLooper());
-            testHandler.postDelayed(() -> {
-                Log.d(TAG, "Test: Forcing floating ball display");
-                showFloatingBall();
-            }, 1000); // 延迟1秒显示
-        }
     }
 
     @Override
@@ -448,6 +438,17 @@ public class KeyboardAwareFloatingBallService extends Service {
     public void forceShowFloatingBall() {
         Log.d(TAG, "Force showing floating ball for testing");
         if (floatingBallManager != null) {
+            // 先获取调试信息
+            String debugInfo = floatingBallManager.getDebugInfo();
+            Log.d(TAG, "FloatingBallManager debug info:\n" + debugInfo);
+            
+            // 如果状态异常，先重置
+            if (floatingBallManager.isShowing()) {
+                Log.w(TAG, "FloatingBall showing state is true but not visible, resetting...");
+                floatingBallManager.forceResetState();
+            }
+            
+            // 尝试显示
             floatingBallManager.show();
         }
     }
@@ -465,7 +466,15 @@ public class KeyboardAwareFloatingBallService extends Service {
         status.append("- Anchor view: ").append(anchorView != null ? "Created" : "Failed").append("\n");
         status.append("- Floating ball manager: ").append(floatingBallManager != null ? "Initialized" : "Failed").append("\n");
         status.append("- Android version: ").append(Build.VERSION.RELEASE).append(" (API ").append(Build.VERSION.SDK_INT).append(")\n");
-        status.append("- Device: ").append(Build.MANUFACTURER).append(" ").append(Build.MODEL);
+        status.append("- Device: ").append(Build.MANUFACTURER).append(" ").append(Build.MODEL).append("\n\n");
+        
+        // 添加 FloatingBallManager 的详细调试信息
+        if (floatingBallManager != null) {
+            status.append(floatingBallManager.getDebugInfo());
+        } else {
+            status.append("FloatingBallManager is null!\n");
+        }
+        
         return status.toString();
     }
     
