@@ -33,12 +33,12 @@
 - **小米设备**: 连续性检测 + 多信号融合 (精度 90%+)
 
 ### 2. 智能显示逻辑
-- **显示条件**: 键盘弹出 + 当前输入法非 Inputist
-- **隐藏条件**: 键盘隐藏 或 当前输入法为 Inputist
+- **显示条件**: 任何软键盘弹出时（不限输入法类型）
+- **隐藏条件**: 软键盘隐藏时
 
 ### 3. 输入法快速切换
-- **当前为 Inputist**: 点击悬浮球 → 切换到上一个输入法
-- **当前非 Inputist**: 点击悬浮球 → 切换到 Inputist 输入法
+- **点击悬浮球**: 在不同输入法之间快速切换
+- **智能切换**: 如果当前是 Inputist → 切换到上一个输入法，否则 → 切换到 Inputist
 
 ## 📋 使用指南
 
@@ -191,3 +191,90 @@ if (heightDiff > threshold || (isXiaomiDevice() && additionalChecks)) {
 // 改进3：防抖动机制
 stateHandler.postDelayed(pendingStateChange, STATE_CHANGE_DELAY);
 ```
+
+## ⚠️ 已知问题和修复
+
+### 小米Android 15设备问题
+
+#### 问题描述
+在小米/红米Android 15设备上遇到以下问题：
+1. **错误的键盘检测**：`InputMethodManager.isActive()` 在无软键盘时也返回true
+2. **悬浮球误显示**：仅因为是第三方输入法就一直显示悬浮球
+3. **输入法切换失败**：点击悬浮球无法正常切换回原输入法
+
+#### 修复方案 v4 - 正确的功能逻辑
+
+**核心修正：移除错误的输入法类型判断**
+```java
+// 修正前（错误）：只有非Inputist输入法才显示悬浮球
+if (isVisible && !isInputistIME(currentInputMethod)) {
+    showFloatingBall();
+}
+
+// 修正后（正确）：任何软键盘弹出都显示悬浮球
+if (isVisible) {
+    showFloatingBall(); // 与输入法类型无关
+}
+```
+
+**1. 严格的键盘活动检测**（保持不变）
+```java
+// 不仅检查isActive，还要验证真实的键盘活动
+boolean hasRealKeyboardActivity = false;
+if (isKeyboardVisible) {
+    // WindowInsets检测到键盘，最可靠的信号
+    hasRealKeyboardActivity = true;
+} else if (hasRecentInputActivity()) {
+    // 有最近的输入活动记录
+    hasRealKeyboardActivity = true;
+}
+
+// 没有真实键盘活动时强制隐藏
+if (!hasRealKeyboardActivity) {
+    return false; // 强制隐藏悬浮球
+}
+```
+
+**2. 增强的输入法切换逻辑**
+```java
+// 多重切换策略
+boolean success = imm.switchToLastInputMethod(null);
+if (!success) {
+    success = imm.switchToNextInputMethod(null, false);
+}
+if (!success) {
+    imm.showInputMethodPicker(); // 最后显示选择器
+}
+```
+
+**3. 防重复点击机制**
+- 1秒内重复点击会被忽略
+- 避免快速点击导致的状态混乱
+
+#### 测试验证
+使用新算法后，所有设备应该：
+- ✅ 任何软键盘弹出时悬浮球都显示（包括Inputist）
+- ✅ 键盘隐藏时悬浮球自动消失
+- ✅ 点击悬浮球能正常在不同输入法间切换
+
+## 🔧 技术改进记录
+
+### v4.0 正确的功能逻辑 (2025-06-27)
+- **问题**：错误理解需求，以为Inputist输入法时要隐藏悬浮球
+- **解决**：移除输入法类型判断，任何软键盘弹出都显示悬浮球
+- **效果**：符合用户真实需求"软键盘弹出→显示，隐藏→消失"
+
+### v3.0 严格键盘检测 (2025-06-27)
+- **问题**：小米设备上 `isActive()` 不准确导致误判
+- **解决**：引入 "真实键盘活动" 概念，结合WindowInsets和输入活动记录
+- **效果**：避免"只要是第三方输入法就显示悬浮球"的问题
+
+### v2.0 多信号融合 (2025-06-27)  
+- **问题**：单一检测方法在不同设备上精度不一致
+- **解决**：API 30+用WindowInsets，API 24-29用ViewTreeObserver，小米设备用定时检测
+- **效果**：覆盖更多设备和Android版本
+
+### v1.0 基础实现 (2025-06-27)
+- **目标**：替代辅助功能服务，使用现代API检测键盘
+- **实现**：KeyboardAwareFloatingBallService + WindowInsets API
+- **成果**：消除辅助功能依赖，简化用户配置

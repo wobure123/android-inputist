@@ -51,6 +51,10 @@ public class KeyboardAwareFloatingBallService extends Service {
     private Runnable pendingStateChange = null;
     private static final long STATE_CHANGE_DELAY = 300; // 300ms 延迟避免快速切换
     
+    // 点击防抖
+    private long lastClickTime = 0;
+    private static final long CLICK_DEBOUNCE_DELAY = 1000; // 1秒防重复点击
+    
     // 定时检查相关
     private android.os.Handler periodicHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private Runnable periodicCheckRunnable;
@@ -339,16 +343,15 @@ public class KeyboardAwareFloatingBallService extends Service {
             boolean isInputist = isInputistIME(currentInputMethod);
             
             Log.i(TAG, "Keyboard state changed: visible=" + isVisible + 
-                      ", currentIME=" + currentInputMethod + 
-                      ", isInputist=" + isInputist);
+                      ", currentIME=" + currentInputMethod);
             
-            if (isVisible && !isInputist) {
-                // 键盘弹出且不是Inputist输入法，显示悬浮球
-                Log.i(TAG, "Should show floating ball: keyboard visible and not Inputist IME");
+            if (isVisible) {
+                // 任何软键盘弹出都显示悬浮球
+                Log.i(TAG, "Should show floating ball: keyboard is visible");
                 showFloatingBall();
             } else {
-                // 键盘隐藏或是Inputist输入法，隐藏悬浮球
-                Log.i(TAG, "Should hide floating ball: keyboard hidden=" + !isVisible + " or isInputist=" + isInputist);
+                // 键盘隐藏就隐藏悬浮球
+                Log.i(TAG, "Should hide floating ball: keyboard is hidden");
                 hideFloatingBall();
             }
         };
@@ -388,6 +391,15 @@ public class KeyboardAwareFloatingBallService extends Service {
      * 悬浮球点击事件处理
      */
     private void onFloatingBallClicked() {
+        long currentTime = System.currentTimeMillis();
+        
+        // 防重复点击
+        if (currentTime - lastClickTime < CLICK_DEBOUNCE_DELAY) {
+            Log.d(TAG, "Click ignored due to debounce (last click " + (currentTime - lastClickTime) + "ms ago)");
+            return;
+        }
+        lastClickTime = currentTime;
+        
         Log.d(TAG, "Floating ball clicked");
         
         updateCurrentInputMethod();
@@ -408,7 +420,7 @@ public class KeyboardAwareFloatingBallService extends Service {
         try {
             InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
             if (imm != null) {
-                Log.d(TAG, "Switching to Inputist IME");
+                Log.d(TAG, "Attempting to switch to Inputist IME");
                 
                 // 保存当前输入法作为previous
                 if (!isInputistIME(currentInputMethod)) {
@@ -418,12 +430,11 @@ public class KeyboardAwareFloatingBallService extends Service {
                 
                 // 直接显示输入法选择器，用户可以快速选择Inputist
                 imm.showInputMethodPicker();
-                
-                // 可选：显示提示
-                showToast("请选择 \"通用输入改写助手\"");
+                showToast("💡 请选择 \"通用输入改写助手\" 或 \"Inputist\"");
             }
         } catch (Exception e) {
-            Log.e(TAG, "Failed to switch to Inputist IME", e);
+            Log.e(TAG, "Failed to show input method picker", e);
+            showToast("❌ 无法打开输入法选择器");
         }
     }
     
@@ -434,23 +445,41 @@ public class KeyboardAwareFloatingBallService extends Service {
         try {
             InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
             if (imm != null) {
-                Log.d(TAG, "Switching to previous IME: " + previousInputMethod);
+                Log.d(TAG, "Attempting to switch to previous IME");
                 
-                // 方法1：使用系统提供的切换到上一个输入法
-                boolean success = imm.switchToLastInputMethod(null);
+                // 尝试多种切换方法
+                boolean success = false;
+                
+                // 方法1：尝试切换到上一个输入法
+                try {
+                    success = imm.switchToLastInputMethod(null);
+                    Log.d(TAG, "switchToLastInputMethod result: " + success);
+                } catch (Exception e) {
+                    Log.w(TAG, "switchToLastInputMethod failed: " + e.getMessage());
+                }
+                
+                // 方法2：如果方法1失败，尝试切换到下一个输入法
+                if (!success) {
+                    try {
+                        success = imm.switchToNextInputMethod(null, false);
+                        Log.d(TAG, "switchToNextInputMethod result: " + success);
+                    } catch (Exception e) {
+                        Log.w(TAG, "switchToNextInputMethod failed: " + e.getMessage());
+                    }
+                }
                 
                 if (success) {
-                    Log.d(TAG, "Successfully switched to last IME");
-                    showToast("已切换回上一个输入法");
+                    showToast("✅ 输入法切换成功");
                 } else {
-                    Log.d(TAG, "switchToLastInputMethod failed, showing picker");
-                    // 如果失败，显示输入法选择器
+                    // 方法3：如果都失败，显示输入法选择器
+                    Log.d(TAG, "Direct switch methods failed, showing picker");
                     imm.showInputMethodPicker();
-                    showToast("请选择要使用的输入法");
+                    showToast("请手动选择要使用的输入法");
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Failed to switch to previous IME", e);
+            Log.e(TAG, "Failed to switch input method", e);
+            showToast("❌ 切换失败，请手动选择输入法");
         }
     }
     
@@ -629,29 +658,25 @@ public class KeyboardAwareFloatingBallService extends Service {
                     consecutiveInactiveCount = 0;
                 }
                 
-                // 优化的检测逻辑：结合多种信号判断软键盘状态
+                // 修正后的逻辑：只要有软键盘弹出就显示悬浮球，与输入法类型无关
                 boolean shouldShow = false;
                 
-                // 如果不是Inputist输入法
-                if (!isInputistIME(currentInputMethod)) {
-                    
-                    // 对于小米设备，使用增强的多信号检测
-                    if (isXiaomiDevice()) {
-                        shouldShow = detectXiaomiKeyboardState(isActive);
-                        Log.v(TAG, "Xiaomi enhanced detection - IME: " + currentInputMethod + 
-                                  ", isActive: " + isActive +
-                                  ", WindowInsets: " + isKeyboardVisible +
-                                  ", hasRecent: " + hasRecentInputActivity() +
-                                  ", consecutiveActive: " + consecutiveActiveCount +
-                                  ", consecutiveInactive: " + consecutiveInactiveCount +
-                                  ", shouldShow: " + shouldShow);
-                    } else {
-                        // 其他设备使用标准检测：结合isActive和WindowInsets结果
-                        shouldShow = isActive || isKeyboardVisible; // 如果WindowInsets检测到键盘或IME激活
-                        Log.v(TAG, "Standard device - IME active: " + isActive + 
-                                  ", WindowInsets detected: " + isKeyboardVisible + 
-                                  ", shouldShow: " + shouldShow);
-                    }
+                if (isXiaomiDevice()) {
+                    // 小米设备使用增强的多信号检测
+                    shouldShow = detectXiaomiKeyboardState(isActive);
+                    Log.v(TAG, "Xiaomi enhanced detection - IME: " + currentInputMethod + 
+                              ", isActive: " + isActive +
+                              ", WindowInsets: " + isKeyboardVisible +
+                              ", hasRecent: " + hasRecentInputActivity() +
+                              ", consecutiveActive: " + consecutiveActiveCount +
+                              ", consecutiveInactive: " + consecutiveInactiveCount +
+                              ", shouldShow: " + shouldShow);
+                } else {
+                    // 其他设备使用标准检测：结合isActive和WindowInsets结果
+                    shouldShow = isActive || isKeyboardVisible; // 任何软键盘激活都显示悬浮球
+                    Log.v(TAG, "Standard device - IME active: " + isActive + 
+                              ", WindowInsets detected: " + isKeyboardVisible + 
+                              ", shouldShow: " + shouldShow);
                 }
                 
                 // 只有在状态真正改变时才处理
@@ -680,14 +705,7 @@ public class KeyboardAwareFloatingBallService extends Service {
     private boolean detectXiaomiKeyboardState(boolean isActive) {
         long currentTime = System.currentTimeMillis();
         
-        // 1. 必须是第三方输入法
-        if (!isCommonThirdPartyIME(currentInputMethod)) {
-            consecutiveActiveCount = 0;
-            consecutiveInactiveCount = 0;
-            return false;
-        }
-        
-        // 2. 严格检查：不仅要isActive，还要有真实的输入活动
+        // 1. 严格检查：不仅要isActive，还要有真实的输入活动
         boolean hasRealKeyboardActivity = false;
         
         // 检查多个信号来确认软键盘真的弹出了：
@@ -703,7 +721,7 @@ public class KeyboardAwareFloatingBallService extends Service {
             hasRealKeyboardActivity = true;
         }
         
-        // 3. 只有当有真实键盘活动时，才考虑显示悬浮球
+        // 2. 只有当有真实键盘活动时，才考虑显示悬浮球
         if (!hasRealKeyboardActivity) {
             // 没有真实的键盘活动，强制隐藏
             consecutiveActiveCount = 0;
@@ -713,7 +731,7 @@ public class KeyboardAwareFloatingBallService extends Service {
             return false;
         }
         
-        // 4. 有真实键盘活动时，使用连续性检测
+        // 3. 有真实键盘活动时，使用连续性检测
         if (isActive) {
             consecutiveActiveCount++;
             consecutiveInactiveCount = 0;
@@ -722,7 +740,7 @@ public class KeyboardAwareFloatingBallService extends Service {
             consecutiveActiveCount = 0;
         }
         
-        // 5. 基于连续性判断状态
+        // 4. 基于连续性判断状态
         boolean newState = false;
         
         if (consecutiveActiveCount >= XIAOMI_CONFIDENCE_THRESHOLD) {
@@ -736,7 +754,7 @@ public class KeyboardAwareFloatingBallService extends Service {
             newState = lastXiaomiKeyboardState;
         }
         
-        // 6. 状态变化时需要稳定一段时间才确认
+        // 5. 状态变化时需要稳定一段时间才确认
         if (newState != lastXiaomiKeyboardState) {
             if (currentTime - lastXiaomiStateChangeTime > XIAOMI_STATE_STABLE_DURATION) {
                 Log.d(TAG, "Xiaomi keyboard state confirmed change: " + lastXiaomiKeyboardState + " -> " + newState +
