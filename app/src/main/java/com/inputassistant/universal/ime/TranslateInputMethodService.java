@@ -1,39 +1,8 @@
 package com.inputassistant.universal.ime;
 
 import android.content.ComponentName;
-import android.content.Co    @Override
-    public void onStartInput(EditorInfo attribute, boolean restarting) {
-        super.onStartInput(attribute, restarting);
-        Log.d(TAG, "Starting input, restarting=" + restarting);
-        
-        // 🎯 显示悬浮球
-        showFloatingBall();
-        
-        // 获取当前输入框的文本
-        captureCurrentText();
-    }
-
-    @Override
-    public void onStartInputView(EditorInfo info, boolean restarting) {
-        super.onStartInputView(info, restarting);
-        Log.d(TAG, "Starting input view");
-        
-        // 记录当前的默认输入法（在切换到我们的输入法之前）
-        recordPreviousInputMethod();
-        
-        // 每次显示时刷新文本
-        captureCurrentText();
-        updateStatusDisplay();
-    }
-    
-    @Override
-    public void onFinishInput() {
-        super.onFinishInput();
-        Log.d(TAG, "Finishing input");
-        
-        // 🎯 隐藏悬浮球
-        hideFloatingBall();
-    } android.content.Intent;
+import android.content.Context;
+import android.content.Intent;
 import android.content.ServiceConnection;
 import android.inputmethodservice.InputMethodService;
 import android.os.IBinder;
@@ -140,6 +109,9 @@ public class TranslateInputMethodService extends InputMethodService {
         super.onStartInput(attribute, restarting);
         Log.d(TAG, "Starting input, restarting=" + restarting);
         
+        // 🎯 显示悬浮球
+        showFloatingBall();
+        
         // 获取当前输入框的文本
         captureCurrentText();
     }
@@ -155,6 +127,15 @@ public class TranslateInputMethodService extends InputMethodService {
         // 每次显示时刷新文本
         captureCurrentText();
         updateStatusDisplay();
+    }
+    
+    @Override
+    public void onFinishInput() {
+        super.onFinishInput();
+        Log.d(TAG, "Finishing input");
+        
+        // 🎯 隐藏悬浮球
+        hideFloatingBall();
     }
 
     /**
