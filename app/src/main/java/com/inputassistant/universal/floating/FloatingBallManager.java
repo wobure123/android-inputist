@@ -132,7 +132,8 @@ public class FloatingBallManager {
      */
     public void show() {
         if (isShowing || !PermissionHelper.hasOverlayPermission(context)) {
-            Log.w(TAG, "Cannot show floating ball: already showing or no permission");
+            Log.w(TAG, "Cannot show floating ball: already showing=" + isShowing + 
+                  ", hasPermission=" + PermissionHelper.hasOverlayPermission(context));
             return;
         }
         
@@ -140,7 +141,11 @@ public class FloatingBallManager {
             windowManager.addView(floatingBallView, ballParams);
             isShowing = true;
             floatingBallView.showWithAnimation();
-            Log.d(TAG, "Floating ball shown");
+            
+            // 立即更新状态显示
+            floatingBallView.updateStatus(true);
+            
+            Log.d(TAG, "Floating ball shown successfully");
         } catch (Exception e) {
             Log.e(TAG, "Failed to show floating ball", e);
             isShowing = false;
@@ -152,6 +157,7 @@ public class FloatingBallManager {
      */
     public void hide() {
         if (!isShowing) {
+            Log.v(TAG, "Floating ball is already hidden");
             return;
         }
         
@@ -160,7 +166,7 @@ public class FloatingBallManager {
                 try {
                     windowManager.removeView(floatingBallView);
                     isShowing = false;
-                    Log.d(TAG, "Floating ball hidden");
+                    Log.d(TAG, "Floating ball hidden successfully");
                 } catch (Exception e) {
                     Log.w(TAG, "Failed to remove floating ball view", e);
                 }

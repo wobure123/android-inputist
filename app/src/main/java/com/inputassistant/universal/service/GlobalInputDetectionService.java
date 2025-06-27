@@ -37,6 +37,8 @@ public class GlobalInputDetectionService extends AccessibilityService {
     private int screenHeight = 0;
     private boolean keyboardVisible = false;
     private String currentInputMethod = "";
+    private long lastKeyboardCheckTime = 0;
+    private static final long KEYBOARD_CHECK_THROTTLE = 200; // 防抖动，200ms内不重复检测
     
     // 服务连接
     private ServiceConnection floatingBallConnection = new ServiceConnection() {
@@ -73,15 +75,22 @@ public class GlobalInputDetectionService extends AccessibilityService {
             return;
         }
         
-        // 配置辅助功能服务 - 只监听窗口变化事件
+        // 配置辅助功能服务 - 监听更多事件类型
         AccessibilityServiceInfo info = new AccessibilityServiceInfo();
         info.eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED |
-                         AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED;
+                         AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED |
+                         AccessibilityEvent.TYPE_VIEW_FOCUSED |
+                         AccessibilityEvent.TYPE_VIEW_CLICKED |
+                         AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED |
+                         AccessibilityEvent.TYPE_VIEW_SCROLLED;
         info.feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC;
-        info.flags = AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS;
-        info.packageNames = null;
-        info.notificationTimeout = 100;
+        info.flags = AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS |
+                    AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS;
+        info.packageNames = null; // 监听所有应用
+        info.notificationTimeout = 50; // 减少延迟
         setServiceInfo(info);
+        
+        Log.i(TAG, "AccessibilityService configured with enhanced event monitoring");
         
         // 绑定悬浮球服务
         if (isFloatingBallEnabled) {
@@ -110,21 +119,30 @@ public class GlobalInputDetectionService extends AccessibilityService {
         try {
             isFloatingBallEnabled = settingsRepository != null && settingsRepository.isFloatingBallEnabled();
         } catch (Exception e) {
+            Log.e(TAG, "Failed to check floating ball enabled status", e);
             return;
         }
         
-        if (!isFloatingBallEnabled || !isFloatingBallServiceBound) {
-            if (isFloatingBallEnabled && !isFloatingBallServiceBound) {
-                bindFloatingBallService();
-            }
+        if (!isFloatingBallEnabled) {
             return;
         }
         
-        // 只处理窗口变化事件来检测软键盘状态
+        // 确保服务已绑定
+        if (!isFloatingBallServiceBound) {
+            bindFloatingBallService();
+            return;
+        }
+        
+        // 处理所有相关的窗口变化事件
         int eventType = event.getEventType();
         if (eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED || 
-            eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
-            postDelayed(() -> checkKeyboardState(), 200);
+            eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED ||
+            eventType == AccessibilityEvent.TYPE_VIEW_FOCUSED ||
+            eventType == AccessibilityEvent.TYPE_VIEW_CLICKED ||
+            eventType == AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED ||
+            eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
+            
+            postDelayed(() -> checkKeyboardState(), 300);
         }
     }
     
@@ -132,27 +150,55 @@ public class GlobalInputDetectionService extends AccessibilityService {
      * 检查软键盘状态
      */
     private void checkKeyboardState() {
-        if (screenHeight <= 0) return;
+        // 防抖动检测
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastKeyboardCheckTime < KEYBOARD_CHECK_THROTTLE) {
+            return;
+        }
+        lastKeyboardCheckTime = currentTime;
+        
+        if (screenHeight <= 0) {
+            return;
+        }
         
         try {
             AccessibilityNodeInfo rootNode = getRootInActiveWindow();
-            if (rootNode == null) return;
+            if (rootNode == null) {
+                postDelayed(() -> checkKeyboardState(), 500);
+                return;
+            }
             
             Rect windowBounds = new Rect();
             rootNode.getBoundsInScreen(windowBounds);
             rootNode.recycle();
             
-            // 计算是否显示软键盘（25%阈值）
+            // 增强的键盘检测逻辑
             int visibleHeight = windowBounds.height();
-            boolean currentKeyboardVisible = (screenHeight - visibleHeight) > (screenHeight * 0.25);
+            int heightDiff = screenHeight - visibleHeight;
+            
+            // 动态阈值：横屏时使用更低的阈值
+            Configuration config = getResources().getConfiguration();
+            boolean isLandscape = config.orientation == Configuration.ORIENTATION_LANDSCAPE;
+            double threshold = isLandscape ? 0.15 : 0.20; // 横屏15%，竖屏20%
+            
+            boolean currentKeyboardVisible = heightDiff > (screenHeight * threshold);
             String currentIME = getCurrentInputMethod();
             
+            // 增加当前激活的输入法检测
+            String activeIME = getCurrentActiveInputMethod();
+            
             // 检查状态变化
-            if (currentKeyboardVisible != keyboardVisible || !currentIME.equals(currentInputMethod)) {
+            if (currentKeyboardVisible != keyboardVisible || 
+                !currentIME.equals(currentInputMethod) ||
+                (activeIME != null && !activeIME.equals(currentInputMethod))) {
+                
                 keyboardVisible = currentKeyboardVisible;
                 currentInputMethod = currentIME;
                 
-                if (keyboardVisible && !isInputistIME(currentInputMethod)) {
+                // 使用激活的输入法进行判断，如果获取不到则使用默认的
+                String imeToCheck = activeIME != null ? activeIME : currentIME;
+                
+                if (keyboardVisible && !isInputistIME(imeToCheck)) {
                     // 非Inputist输入法弹出，显示悬浮球
                     showFloatingBall();
                 } else {
@@ -181,6 +227,29 @@ public class GlobalInputDetectionService extends AccessibilityService {
     }
     
     /**
+     * 获取当前激活的输入法（可能与默认输入法不同）
+     */
+    private String getCurrentActiveInputMethod() {
+        try {
+            // 尝试通过系统服务获取当前激活的输入法
+            android.view.inputmethod.InputMethodManager imm = 
+                (android.view.inputmethod.InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                // 这个方法可能需要特殊权限，如果失败就返回null
+                java.lang.reflect.Method method = imm.getClass().getMethod("getCurrentInputMethodSubtype");
+                Object subtype = method.invoke(imm);
+                if (subtype != null) {
+                    // 如果能获取到subtype，说明有输入法在运行
+                    return getCurrentInputMethod(); // 返回默认的，因为反射方法可能不稳定
+                }
+            }
+        } catch (Exception e) {
+            // 如果反射失败，不记录错误，直接返回null
+        }
+        return null;
+    }
+    
+    /**
      * 检查是否是Inputist输入法
      */
     private boolean isInputistIME(String ime) {
@@ -193,6 +262,8 @@ public class GlobalInputDetectionService extends AccessibilityService {
     private void showFloatingBall() {
         if (floatingBallService != null) {
             floatingBallService.showFloatingBall();
+        } else {
+            bindFloatingBallService();
         }
     }
     

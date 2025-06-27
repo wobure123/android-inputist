@@ -59,6 +59,9 @@ public class FloatingBallView extends FrameLayout {
         // 初始化为可见
         setVisibility(View.VISIBLE);
         setAlpha(0.8f);
+        
+        // 初始化状态显示
+        updateStatusDisplay();
     }
     
     /**
@@ -72,30 +75,54 @@ public class FloatingBallView extends FrameLayout {
      * 处理悬浮球点击事件
      */
     private void onBallClick(View v) {
+        Log.d(TAG, "FloatingBall clicked");
+        
         // 添加点击动画效果
         animateClick();
         
         // 检查输入法状态并执行相应操作
         InputMethodHelper.InputMethodStatus status = 
             InputMethodHelper.checkInputMethodStatus(getContext());
+        
+        Log.d(TAG, "Current InputMethod status: " + status);
             
         switch (status) {
             case NOT_ENABLED:
-                // 输入法未启用，引导用户去设置
+                // 输入法未启用，引导用户去设置页面启用
+                Log.d(TAG, "InputMethod not enabled, opening main activity");
+                showToast("请先启用输入法助手");
                 openMainActivity();
                 break;
                 
             case ENABLED_NOT_CURRENT:
-                // 输入法已启用但非当前，显示输入法选择器
+                // 输入法已启用但非当前，直接显示输入法选择器切换
+                Log.d(TAG, "InputMethod enabled but not current, showing picker");
+                showToast("请选择"输入法助手"");
                 InputMethodHelper.showInputMethodPicker(getContext());
                 break;
                 
             case ENABLED_AND_CURRENT:
-                // 输入法已是当前，显示快捷菜单
+                // 输入法已是当前，显示快捷菜单或直接打开主界面
+                Log.d(TAG, "InputMethod is current, showing quick menu");
                 if (manager != null) {
                     manager.showQuickMenu();
+                } else {
+                    // 如果没有菜单管理器，直接打开主界面
+                    showToast("打开输入法助手");
+                    openMainActivity();
                 }
                 break;
+        }
+    }
+    
+    /**
+     * 显示提示消息
+     */
+    private void showToast(String message) {
+        try {
+            android.widget.Toast.makeText(getContext(), message, android.widget.Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to show toast: " + message, e);
         }
     }
     
@@ -229,10 +256,47 @@ public class FloatingBallView extends FrameLayout {
      * 更新状态显示
      */
     public void updateStatus(boolean isInputActive) {
-        if (isInputActive) {
-            tvFloatingHint.setVisibility(View.VISIBLE);
-            ivFloatingBall.setImageTintList(null); // 移除tint，使用原色
-        } else {
+        updateStatusDisplay();
+    }
+    
+    /**
+     * 更新悬浮球状态显示
+     */
+    private void updateStatusDisplay() {
+        try {
+            InputMethodHelper.InputMethodStatus status = 
+                InputMethodHelper.checkInputMethodStatus(getContext());
+            
+            switch (status) {
+                case NOT_ENABLED:
+                    // 输入法未启用 - 红色提示
+                    tvFloatingHint.setVisibility(View.VISIBLE);
+                    tvFloatingHint.setText("未启用");
+                    tvFloatingHint.setTextColor(getContext().getColor(android.R.color.holo_red_light));
+                    ivFloatingBall.setImageTintList(
+                        getContext().getColorStateList(android.R.color.holo_red_light));
+                    break;
+                    
+                case ENABLED_NOT_CURRENT:
+                    // 已启用但非当前 - 橙色提示
+                    tvFloatingHint.setVisibility(View.VISIBLE);
+                    tvFloatingHint.setText("点击切换");
+                    tvFloatingHint.setTextColor(getContext().getColor(android.R.color.holo_orange_light));
+                    ivFloatingBall.setImageTintList(
+                        getContext().getColorStateList(android.R.color.holo_orange_light));
+                    break;
+                    
+                case ENABLED_AND_CURRENT:
+                    // 已启用且为当前 - 绿色提示
+                    tvFloatingHint.setVisibility(View.VISIBLE);
+                    tvFloatingHint.setText("已激活");
+                    tvFloatingHint.setTextColor(getContext().getColor(android.R.color.holo_green_light));
+                    ivFloatingBall.setImageTintList(null); // 使用原色
+                    break;
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to update status display", e);
+            // 默认状态
             tvFloatingHint.setVisibility(View.GONE);
             ivFloatingBall.setImageTintList(getContext().getColorStateList(android.R.color.white));
         }

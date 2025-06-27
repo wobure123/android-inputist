@@ -56,9 +56,41 @@ public class InputMethodHelper {
             if (imm != null) {
                 imm.showInputMethodPicker();
                 Log.d(TAG, "Showing input method picker");
+                
+                // 显示帮助提示
+                android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+                handler.postDelayed(() -> {
+                    try {
+                        android.widget.Toast.makeText(context, 
+                            "请在弹出的选择器中选择"输入法助手"", 
+                            android.widget.Toast.LENGTH_LONG).show();
+                    } catch (Exception e) {
+                        Log.w(TAG, "Failed to show picker hint", e);
+                    }
+                }, 500);
             }
         } catch (Exception e) {
             Log.e(TAG, "Failed to show input method picker", e);
+            // 备选方案：打开输入法设置页面
+            showInputMethodSettings(context);
+        }
+    }
+    
+    /**
+     * 打开输入法设置页面（备选方案）
+     */
+    public static void showInputMethodSettings(Context context) {
+        try {
+            android.content.Intent intent = new android.content.Intent(android.provider.Settings.ACTION_INPUT_METHOD_SETTINGS);
+            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+            Log.d(TAG, "Opened input method settings");
+            
+            android.widget.Toast.makeText(context, 
+                "请在设置中选择"输入法助手"", 
+                android.widget.Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to open input method settings", e);
         }
     }
     

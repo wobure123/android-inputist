@@ -305,11 +305,11 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
                 .setPositiveButton(isEnabled ? "禁用悬浮球" : "启用悬浮球", (dialog, which) -> {
                     toggleFloatingBall(!isEnabled);
                 })
-                .setNeutralButton("测试悬浮球", (dialog, which) -> {
-                    testFloatingBall();
+                .setNeutralButton("交互测试", (dialog, which) -> {
+                    testFloatingBallInteraction();
                 })
-                .setNegativeButton("强制显示", (dialog, which) -> {
-                    forceShowFloatingBall();
+                .setNegativeButton("服务检查", (dialog, which) -> {
+                    checkFloatingBallServices();
                 })
                 .show();
     }
@@ -591,5 +591,137 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
                 Log.d("MainActivity", "FloatingBallService disconnected");
             }
         }, Context.BIND_AUTO_CREATE);
+    }
+    
+    /**
+     * 检查悬浮球相关服务状态
+     */
+    private void checkFloatingBallServices() {
+        StringBuilder status = new StringBuilder();
+        status.append("🔍 悬浮球服务状态检查：\n\n");
+        
+        // 检查权限
+        boolean hasOverlay = PermissionHelper.hasOverlayPermission(this);
+        boolean hasAccessibility = AccessibilityHelper.isOurAccessibilityServiceEnabled(this);
+        boolean isEnabled = settingsRepository.isFloatingBallEnabled();
+        
+        status.append("🔑 悬浮窗权限：").append(hasOverlay ? "✅ 已授予" : "❌ 未授予").append("\n");
+        status.append("🔑 辅助功能权限：").append(hasAccessibility ? "✅ 已启用" : "❌ 未启用").append("\n");
+        status.append("🎈 悬浮球功能：").append(isEnabled ? "✅ 已启用" : "❌ 已禁用").append("\n\n");
+        
+        // 检查服务运行状态
+        android.app.ActivityManager am = (android.app.ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        boolean globalServiceRunning = false;
+        boolean floatingServiceRunning = false;
+        
+        for (android.app.ActivityManager.RunningServiceInfo service : am.getRunningServices(Integer.MAX_VALUE)) {
+            if (service.service.getClassName().contains("GlobalInputDetectionService")) {
+                globalServiceRunning = true;
+            }
+            if (service.service.getClassName().contains("FloatingBallService")) {
+                floatingServiceRunning = true;
+            }
+        }
+        
+        status.append("🔧 服务运行状态：\n");
+        status.append("  • GlobalInputDetectionService：").append(globalServiceRunning ? "✅ 运行中" : "❌ 未运行").append("\n");
+        status.append("  • FloatingBallService：").append(floatingServiceRunning ? "✅ 运行中" : "❌ 未运行").append("\n\n");
+        
+        // 建议修复步骤
+        status.append("🛠️ 修复建议：\n");
+        if (!hasOverlay) {
+            status.append("1. 请授予悬浮窗权限\n");
+        }
+        if (!hasAccessibility) {
+            status.append("2. 请启用辅助功能权限\n");
+        }
+        if (!isEnabled) {
+            status.append("3. 请启用悬浮球功能\n");
+        }
+        if (!globalServiceRunning && hasAccessibility) {
+            status.append("4. 辅助功能服务未运行，请重启应用或重新启用辅助功能\n");
+        }
+        
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("服务状态检查")
+                .setMessage(status.toString())
+                .setPositiveButton("重新启动服务", (dialog, which) -> {
+                    restartFloatingBallServices();
+                })
+                .setNeutralButton("测试悬浮球", (dialog, which) -> {
+                    forceShowFloatingBall();
+                })
+                .setNegativeButton("关闭", null)
+                .show();
+    }
+    
+    /**
+     * 重新启动悬浮球相关服务
+     */
+    private void restartFloatingBallServices() {
+        try {
+            // 停止悬浮球服务
+            Intent floatingIntent = new Intent(this, com.inputassistant.universal.floating.FloatingBallService.class);
+            stopService(floatingIntent);
+            
+            // 延迟后重新启动
+            postDelayed(() -> {
+                if (settingsRepository.isFloatingBallEnabled()) {
+                    startService(floatingIntent);
+                    showToast("✅ 服务已重启");
+                }
+            }, 1000);
+            
+        } catch (Exception e) {
+            showToast("❌ 重启服务失败：" + e.getMessage());
+            Log.e("MainActivity", "Restart services failed", e);
+        }
+    }
+    
+    /**
+     * 测试悬浮球交互功能
+     */
+    private void testFloatingBallInteraction() {
+        StringBuilder result = new StringBuilder();
+        result.append("🎯 悬浮球交互测试：\n\n");
+        
+        // 检查输入法状态
+        InputMethodHelper.InputMethodStatus status = 
+            InputMethodHelper.checkInputMethodStatus(this);
+        
+        result.append("📱 当前输入法状态：");
+        switch (status) {
+            case NOT_ENABLED:
+                result.append("❌ 输入法助手未启用\n");
+                result.append("💡 点击悬浮球应该：跳转到设置页面\n");
+                break;
+            case ENABLED_NOT_CURRENT:
+                result.append("🟡 输入法助手已启用但非当前\n");
+                result.append("💡 点击悬浮球应该：显示输入法选择器\n");
+                break;
+            case ENABLED_AND_CURRENT:
+                result.append("✅ 输入法助手已是当前输入法\n");
+                result.append("💡 点击悬浮球应该：显示快捷菜单\n");
+                break;
+        }
+        
+        result.append("\n🔧 预期交互流程：\n");
+        result.append("1. 点击悬浮球看到对应状态提示\n");
+        result.append("2. 根据状态执行相应操作\n");
+        result.append("3. 悬浮球颜色应该反映当前状态\n\n");
+        
+        result.append("🎨 悬浮球颜色说明：\n");
+        result.append("🔴 红色 = 未启用输入法\n");
+        result.append("🟠 橙色 = 可点击切换\n");
+        result.append("🟢 绿色 = 已激活状态\n");
+        
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("交互测试说明")
+                .setMessage(result.toString())
+                .setPositiveButton("强制显示悬浮球", (dialog, which) -> {
+                    forceShowFloatingBall();
+                })
+                .setNegativeButton("关闭", null)
+                .show();
     }
 }

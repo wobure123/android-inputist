@@ -14,16 +14,22 @@
         android:scaleType="fitCenter"
         android:tint="@android:color/white" />
     
-    <!-- 可选：添加提示文字 -->
+    <!-- 状态提示文字 -->
     <TextView
         android:id="@+id/tv_floating_hint"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal|bottom"
-        android:layout_marginBottom="2dp"
-        android:text="AI"
-        android:textColor="@android:color/white"
-        android:textSize="8sp"
-        android:visibility="gone" />
+        android:layout_marginBottom="-2dp"
+        android:text="点击切换"
+        android:textColor="@android:color/holo_orange_light"
+        android:textSize="9sp"
+        android:textStyle="bold"
+        android:background="#AA000000"
+        android:paddingLeft="3dp"
+        android:paddingRight="3dp"
+        android:paddingTop="1dp"
+        android:paddingBottom="1dp"
+        android:visibility="visible" />
 
 </FrameLayout>

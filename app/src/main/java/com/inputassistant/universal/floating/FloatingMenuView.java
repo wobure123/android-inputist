@@ -62,19 +62,58 @@ public class FloatingMenuView extends LinearLayout {
     private void setupClickListeners() {
         // 切换到输入法助手
         btnSwitchToAssistant.setOnClickListener(v -> {
-            InputMethodHelper.showInputMethodPicker(getContext());
+            Log.d(TAG, "Switch to assistant button clicked");
+            
+            InputMethodHelper.InputMethodStatus status = 
+                InputMethodHelper.checkInputMethodStatus(getContext());
+            
+            switch (status) {
+                case NOT_ENABLED:
+                    android.widget.Toast.makeText(getContext(), 
+                        "请先在设置中启用输入法助手", android.widget.Toast.LENGTH_LONG).show();
+                    openMainActivity();
+                    break;
+                    
+                case ENABLED_NOT_CURRENT:
+                    android.widget.Toast.makeText(getContext(), 
+                        "正在打开输入法选择器...", android.widget.Toast.LENGTH_SHORT).show();
+                    InputMethodHelper.showInputMethodPicker(getContext());
+                    break;
+                    
+                case ENABLED_AND_CURRENT:
+                    android.widget.Toast.makeText(getContext(), 
+                        "输入法助手已是当前输入法", android.widget.Toast.LENGTH_SHORT).show();
+                    openMainActivity();
+                    break;
+            }
             hideMenu();
         });
         
-        // 快速翻译（待实现具体功能）
+        // 快速翻译功能
         btnQuickTranslate.setOnClickListener(v -> {
-            // TODO: 实现快速翻译功能
-            // 可以直接调用输入法服务的翻译动作
+            Log.d(TAG, "Quick translate button clicked");
+            
+            // 检查是否可以执行翻译
+            InputMethodHelper.InputMethodStatus status = 
+                InputMethodHelper.checkInputMethodStatus(getContext());
+                
+            if (status == InputMethodHelper.InputMethodStatus.ENABLED_AND_CURRENT) {
+                android.widget.Toast.makeText(getContext(), 
+                    "请在输入法助手中使用翻译功能", android.widget.Toast.LENGTH_SHORT).show();
+                openMainActivity();
+            } else {
+                android.widget.Toast.makeText(getContext(), 
+                    "请先切换到输入法助手", android.widget.Toast.LENGTH_SHORT).show();
+                InputMethodHelper.showInputMethodPicker(getContext());
+            }
             hideMenu();
         });
         
         // 设置
         btnSettings.setOnClickListener(v -> {
+            Log.d(TAG, "Settings button clicked");
+            android.widget.Toast.makeText(getContext(), 
+                "打开输入法助手设置", android.widget.Toast.LENGTH_SHORT).show();
             openMainActivity();
             hideMenu();
         });
