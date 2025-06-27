@@ -33,7 +33,7 @@ public class GlobalInputDetectionService extends AccessibilityService {
     private ServiceConnection floatingBallConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            FloatingBallService.LocalBinder binder = (FloatingBallService.LocalBinder) service;
+            FloatingBallService.FloatingBallBinder binder = (FloatingBallService.FloatingBallBinder) service;
             floatingBallService = binder.getService();
             isFloatingBallServiceBound = true;
             Log.d(TAG, "FloatingBallService connected");
