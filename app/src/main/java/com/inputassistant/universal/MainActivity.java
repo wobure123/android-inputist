@@ -8,6 +8,9 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.*;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.inputassistant.universal.adapter.ActionAdapter;
@@ -25,6 +28,8 @@ import java.util.List;
  */
 public class MainActivity extends AppCompatActivity implements ActionAdapter.OnActionClickListener {
     private static final int REQUEST_ACTION_EDIT = 1;
+    private static final int REQUEST_NOTIFICATION_PERMISSION = 2;
+    private static final int REQUEST_OVERLAY_PERMISSION = 3;
     
     private EditText etApiBaseUrl;
     private EditText etApiKey;
@@ -220,6 +225,45 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
     }
 
     @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        
+        if (requestCode == REQUEST_NOTIFICATION_PERMISSION) {
+            if (grantResults.length > 0 && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                // 通知权限授予成功，重新尝试启用悬浮球
+                showToast("通知权限已授予");
+                enableFloatingBall();
+            } else {
+                // 权限被拒绝
+                showToast("需要通知权限才能启用悬浮球");
+                switchFloatingBall.setChecked(false);
+                
+                // 检查是否是永久拒绝
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+                    !ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.POST_NOTIFICATIONS)) {
+                    showPermissionDeniedDialog();
+                }
+            }
+        }
+    }
+    
+    /**
+     * 显示权限被永久拒绝的对话框
+     */
+    private void showPermissionDeniedDialog() {
+        new AlertDialog.Builder(this)
+            .setTitle("权限被拒绝")
+            .setMessage("通知权限已被永久拒绝。请在应用设置中手动开启通知权限。")
+            .setPositiveButton("去设置", (dialog, which) -> {
+                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                intent.setData(Uri.fromParts("package", getPackageName(), null));
+                startActivity(intent);
+            })
+            .setNegativeButton("取消", null)
+            .show();
+    }
+
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_ACTION_EDIT && resultCode == RESULT_OK) {
@@ -300,6 +344,19 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
      * 启用悬浮球（前台服务版本）
      */
     private void enableFloatingBall() {
+        // 检查悬浮窗权限
+        if (!Settings.canDrawOverlays(this)) {
+            showToast("请先授予悬浮窗权限");
+            switchFloatingBall.setChecked(false);
+            requestFloatingBallPermission();
+            return;
+        }
+        
+        // 检查通知权限（Android 13+）
+        if (!checkNotificationPermission()) {
+            return;
+        }
+        
         try {
             settingsRepository.setFloatingBallEnabled(true);
             Intent serviceIntent = new Intent(this, FloatingBallService.class);
@@ -317,6 +374,87 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
             e.printStackTrace();
             showToast("启动悬浮球失败: " + e.getMessage());
         }
+    }
+    
+    /**
+     * 检查通知权限
+     */
+    private boolean checkNotificationPermission() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            // Android 13+ 需要运行时通知权限
+            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) 
+                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                
+                // 显示权限说明对话框
+                showNotificationPermissionDialog();
+                return false;
+            }
+        } else {
+            // Android 13 以下检查通知是否被用户禁用
+            if (!NotificationManagerCompat.from(this).areNotificationsEnabled()) {
+                showNotificationSettingsDialog();
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    /**
+     * 显示通知权限说明对话框
+     */
+    private void showNotificationPermissionDialog() {
+        new AlertDialog.Builder(this)
+            .setTitle("需要通知权限")
+            .setMessage("⚠️ 重要提醒：\n\n" +
+                       "悬浮球使用前台服务以保持稳定运行，这需要显示常驻通知。\n\n" +
+                       "• 通知优先级设置为"低"，减少干扰\n" +
+                       "• 通知中包含快捷关闭按钮\n" +
+                       "• 这是 Android 系统的强制要求\n\n" +
+                       "点击"允许"将请求通知权限。")
+            .setPositiveButton("允许", (dialog, which) -> {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                    ActivityCompat.requestPermissions(this, 
+                        new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 
+                        REQUEST_NOTIFICATION_PERMISSION);
+                }
+            })
+            .setNegativeButton("取消", (dialog, which) -> {
+                showToast("需要通知权限才能启用悬浮球");
+                switchFloatingBall.setChecked(false);
+            })
+            .setCancelable(false)
+            .show();
+    }
+    
+    /**
+     * 显示通知设置对话框
+     */
+    private void showNotificationSettingsDialog() {
+        new AlertDialog.Builder(this)
+            .setTitle("需要开启通知")
+            .setMessage("⚠️ 重要提醒：\n\n" +
+                       "悬浮球使用前台服务以保持稳定运行，这需要显示常驻通知。\n\n" +
+                       "• 通知优先级设置为"低"，减少干扰\n" +
+                       "• 通知中包含快捷关闭按钮\n" +
+                       "• 这是 Android 系统的强制要求\n\n" +
+                       "请在设置中开启 Inputist 的通知权限。")
+            .setPositiveButton("去设置", (dialog, which) -> {
+                try {
+                    Intent intent = new Intent();
+                    intent.setAction("android.settings.APP_NOTIFICATION_SETTINGS");
+                    intent.putExtra("android.provider.extra.APP_PACKAGE", getPackageName());
+                    startActivity(intent);
+                } catch (Exception e) {
+                    // 备用方案：打开应用详情页
+                    Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                    intent.setData(Uri.fromParts("package", getPackageName(), null));
+                    startActivity(intent);
+                }
+            })
+            .setNegativeButton("取消", (dialog, which) -> {
+                switchFloatingBall.setChecked(false);
+            })
+            .show();
     }
 
     /**
@@ -347,7 +485,7 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
         }
     }
 
-    private static final int REQUEST_FLOATING_BALL_PERMISSION = 2;
+    private static final int REQUEST_FLOATING_BALL_PERMISSION = 4;
 
     @Override
     protected void onResume() {
