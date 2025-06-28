@@ -34,12 +34,9 @@ public class FloatingBallService extends Service {
     private WindowManager.LayoutParams params;
     private SettingsRepository settingsRepository;
     private InputMethodManager inputMethodManager;
-    private InputMethodSwitcher inputMethodSwitcher;
     
     // 悬浮球状态
     private boolean isDragging = false;
-    private float initialX, initialY;
-    private float initialTouchX, initialTouchY;
     
     @Override
     public void onCreate() {
@@ -60,7 +57,6 @@ public class FloatingBallService extends Service {
         }
         
         inputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-        inputMethodSwitcher = new InputMethodSwitcher(this);
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         
         createFloatingBall();
@@ -104,40 +100,46 @@ public class FloatingBallService extends Service {
     
     private void setupTouchListener() {
         floatingView.setOnTouchListener(new View.OnTouchListener() {
+            private long downTime;
+            private float lastX, lastY;
+            private float initialX, initialY;
+            
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        isDragging = false;
+                        downTime = System.currentTimeMillis();
+                        lastX = event.getRawX();
+                        lastY = event.getRawY();
                         initialX = params.x;
                         initialY = params.y;
-                        initialTouchX = event.getRawX();
-                        initialTouchY = event.getRawY();
-                        
-                        // 显示悬浮球
-                        showFloatingBall();
+                        isDragging = false;
                         return true;
                         
                     case MotionEvent.ACTION_MOVE:
-                        float deltaX = event.getRawX() - initialTouchX;
-                        float deltaY = event.getRawY() - initialTouchY;
+                        float deltaX = event.getRawX() - lastX;
+                        float deltaY = event.getRawY() - lastY;
                         
-                        // 判断是否为拖拽操作
-                        if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
+                        // 更宽松的拖拽判断条件
+                        if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
                             isDragging = true;
-                            params.x = (int) (initialX + deltaX);
-                            params.y = (int) (initialY + deltaY);
+                            params.x += (int)deltaX;
+                            params.y += (int)deltaY;
                             windowManager.updateViewLayout(floatingView, params);
+                            lastX = event.getRawX();
+                            lastY = event.getRawY();
                         }
                         return true;
                         
                     case MotionEvent.ACTION_UP:
-                        if (!isDragging) {
-                            // 点击事件 - 切换输入法
+                        long upTime = System.currentTimeMillis();
+                        if (!isDragging && (upTime - downTime) < 500) {
+                            // 短点击 - 切换输入法
                             switchInputMethod();
-                        } else {
-                            // 拖拽结束 - 自动贴边
-                            autoSnapToEdge();
+                        } else if (isDragging) {
+                            // 拖拽结束 - 简单贴边
+                            snapToEdge();
+                            savePosition();
                         }
                         return true;
                 }
@@ -147,145 +149,135 @@ public class FloatingBallService extends Service {
     }
     
     /**
-     * 切换输入法
+     * 切换输入法 - 简化可靠的方案
      */
     private void switchInputMethod() {
         try {
-            String targetPackage = getPackageName();
-            String inputistIME = targetPackage + "/.ime.TranslateInputMethodService";
+            String currentIME = getCurrentInputMethodId();
+            String ourPackage = getPackageName();
             
-            if (inputMethodSwitcher.isCurrentInputMethodContains(targetPackage)) {
-                // 当前是Inputist，尝试切换到上一个输入法
-                String previousIME = settingsRepository.getPreviousInputMethod();
-                if (!previousIME.isEmpty() && !previousIME.equals(inputistIME)) {
-                    // 尝试切换到上一个输入法
-                    inputMethodSwitcher.switchToInputMethod(previousIME, true);
-                } else {
-                    // 如果没有保存的上一个输入法，显示选择器
-                    inputMethodSwitcher.showInputMethodPicker();
-                }
+            if (currentIME != null && currentIME.contains(ourPackage)) {
+                // 当前是我们的输入法，记住这个状态并提示选择其他输入法
+                settingsRepository.savePreviousInputMethod(currentIME);
+                showToast("💡 选择其他输入法可快速切换回来");
             } else {
-                // 当前不是Inputist，保存当前输入法并切换到Inputist
-                String currentIME = inputMethodSwitcher.getCurrentInputMethodId();
-                if (!currentIME.isEmpty() && !currentIME.equals(inputistIME)) {
+                // 当前不是我们的输入法，记住它并提示选择Inputist
+                if (currentIME != null && !currentIME.isEmpty()) {
                     settingsRepository.savePreviousInputMethod(currentIME);
                 }
-                
-                // 尝试切换到Inputist
-                inputMethodSwitcher.switchToInputMethod(inputistIME, true);
+                showToast("💡 选择Inputist输入法开始使用AI功能");
             }
             
-            // 延迟更新图标状态，因为输入法切换需要时间
-            floatingBall.postDelayed(() -> updateFloatingBallIcon(), 1000);
+            // 直接显示输入法选择器（最可靠的方式）
+            showInputMethodPicker();
+            
+            // 延迟更新状态，给用户时间选择
+            if (floatingBall != null) {
+                floatingBall.postDelayed(() -> updateFloatingBallIcon(), 1000);
+            }
             
         } catch (Exception e) {
             e.printStackTrace();
-            // 如果出错，显示输入法选择器
-            inputMethodSwitcher.showInputMethodPicker();
+            showToast("打开输入法选择器");
+            showInputMethodPicker();
         }
     }
     
     /**
-     * 显示输入法选择器
+     * 获取当前输入法ID
      */
-    private void showInputMethodPicker() {
-        inputMethodSwitcher.showInputMethodPicker();
+    private String getCurrentInputMethodId() {
+        try {
+            return Settings.Secure.getString(
+                    getContentResolver(),
+                    Settings.Secure.DEFAULT_INPUT_METHOD
+            );
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "";
+        }
     }
     
     /**
-     * 更新悬浮球图标状态
+     * 显示输入法选择器 - 简化可靠的方案
+     */
+    private void showInputMethodPicker() {
+        try {
+            if (inputMethodManager != null) {
+                inputMethodManager.showInputMethodPicker();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * 显示提示消息
+     */
+    private void showToast(String message) {
+        try {
+            android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * 更新悬浮球图标状态 - 简化逻辑
      */
     private void updateFloatingBallIcon() {
         try {
-            String targetPackage = getPackageName();
+            String currentIME = getCurrentInputMethodId();
+            String ourPackage = getPackageName();
             
-            if (inputMethodSwitcher.isCurrentInputMethodContains(targetPackage)) {
+            if (currentIME != null && currentIME.contains(ourPackage)) {
                 // 当前是Inputist输入法
                 floatingBall.setImageResource(R.drawable.ic_floating_ball_active);
-                if (floatingBall.getAlpha() == 1.0f) { // 只有在完全显示时才设置透明度
-                    floatingBall.setAlpha(1.0f);
-                }
+                floatingBall.setAlpha(1.0f);
             } else {
                 // 当前不是Inputist输入法
                 floatingBall.setImageResource(R.drawable.ic_floating_ball_inactive);
-                if (floatingBall.getAlpha() == 1.0f) { // 只有在完全显示时才设置透明度
-                    floatingBall.setAlpha(0.8f);
-                }
+                floatingBall.setAlpha(0.8f);
             }
         } catch (Exception e) {
             e.printStackTrace();
             // 默认状态
             floatingBall.setImageResource(R.drawable.ic_floating_ball_inactive);
-            if (floatingBall.getAlpha() == 1.0f) {
-                floatingBall.setAlpha(0.8f);
-            }
+            floatingBall.setAlpha(0.8f);
         }
     }
     
     /**
-     * 自动贴边功能
+     * 简单贴边功能 - 不隐藏，保持完全可见
      */
-    private void autoSnapToEdge() {
+    private void snapToEdge() {
         int screenWidth = getResources().getDisplayMetrics().widthPixels;
         int ballWidth = floatingView.getWidth();
         
-        // 判断悬浮球应该贴向左边还是右边
-        boolean snapToLeft = params.x < screenWidth / 2;
-        
-        if (snapToLeft) {
-            // 贴向左边，部分隐藏
-            params.x = -ballWidth / 2;
+        // 简单贴边到最近的边缘，但保持完全可见
+        if (params.x < screenWidth / 2) {
+            params.x = 0;  // 贴左边
         } else {
-            // 贴向右边，部分隐藏
-            params.x = screenWidth - ballWidth / 2;
+            params.x = screenWidth - ballWidth;  // 贴右边
         }
         
-        // 确保不会超出屏幕边界
+        // 确保垂直位置在屏幕范围内
         int screenHeight = getResources().getDisplayMetrics().heightPixels;
         int ballHeight = floatingView.getHeight();
-        
-        if (params.y < 0) {
-            params.y = 0;
-        } else if (params.y > screenHeight - ballHeight) {
-            params.y = screenHeight - ballHeight;
-        }
+        params.y = Math.max(0, Math.min(params.y, screenHeight - ballHeight));
         
         windowManager.updateViewLayout(floatingView, params);
-        
-        // 保存悬浮球位置
-        settingsRepository.saveFloatingBallPosition(params.x, params.y);
-        
-        // 添加贴边半隐藏效果
-        floatingBall.animate()
-                .alpha(0.6f)
-                .setDuration(300)
-                .start();
-        
-        // 3秒后如果没有交互，进一步隐藏
-        floatingBall.removeCallbacks(hideRunnable);
-        floatingBall.postDelayed(hideRunnable, 3000);
     }
     
-    // 隐藏动画Runnable
-    private final Runnable hideRunnable = new Runnable() {
-        @Override
-        public void run() {
-            floatingBall.animate()
-                    .alpha(0.3f)
-                    .setDuration(300)
-                    .start();
-        }
-    };
-    
     /**
-     * 显示悬浮球（在交互时调用）
+     * 保存悬浮球位置
      */
-    private void showFloatingBall() {
-        floatingBall.removeCallbacks(hideRunnable);
-        floatingBall.animate()
-                .alpha(1.0f)
-                .setDuration(200)
-                .start();
+    private void savePosition() {
+        try {
+            settingsRepository.saveFloatingBallPosition(params.x, params.y);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
     
     @Override
