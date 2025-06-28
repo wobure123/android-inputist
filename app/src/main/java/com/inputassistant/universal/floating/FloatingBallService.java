@@ -100,25 +100,23 @@ public class FloatingBallService extends Service {
         // 添加到窗口管理器
         windowManager.addView(floatingView, params);
         
-        // 更新悬浮球图标状态
-        updateFloatingBallIcon();
+        // 设置统一的悬浮球样式（资源优化版本）
+        setupSimpleFloatingBallStyle();
     }
     
     /**
-     * 设置悬浮球样式 - 参考项目风格
+     * 设置悬浮球样式 - 资源优化版本（统一样式）
      */
-    private void setupFloatingBallStyle() {
-        // 使用半透明的蓝色作为默认颜色，符合现代设计趋势
+    private void setupSimpleFloatingBallStyle() {
+        // 使用统一的简化键盘图标，减少资源消耗
+        floatingBall.setImageResource(R.drawable.ic_floating_ball_simple);
+        
+        // 使用半透明的蓝色作为默认颜色
         int color = getResources().getColor(R.color.floating_ball_blue);
-        
-        // 设置图标
-        floatingBall.setImageResource(R.drawable.ic_floating_ball_inactive);
-        
-        // 设置颜色滤镜
         floatingBall.setColorFilter(color);
         
-        // 设置初始透明度 - 更加透明，符合现代悬浮元素设计
-        floatingBall.setAlpha(0.8f);
+        // 固定透明度为60%，避免频繁更新
+        floatingBall.setAlpha(0.6f);
     }
     
     private void setupTouchListener() {
@@ -229,10 +227,8 @@ public class FloatingBallService extends Service {
                 inputMethodHelper.showInputMethodPicker();
             }
             
-            // 延迟更新状态
-            if (floatingBall != null) {
-                floatingBall.postDelayed(() -> updateFloatingBallIcon(), 800);
-            }
+            // 简化版本：移除状态更新，节省资源
+            // 用户通过点击悬浮球直接获得输入法选择器，无需状态指示
             
         } catch (Exception e) {
             e.printStackTrace();
@@ -254,31 +250,16 @@ public class FloatingBallService extends Service {
     }
     
     /**
-     * 更新悬浮球图标状态 - 参考项目风格
+     * 简化版本的输入法状态检查（可选功能）
+     * 如果需要在 Toast 中显示不同提示，可以调用此方法
      */
-    private void updateFloatingBallIcon() {
+    private boolean isOurInputMethodActive() {
         try {
+            String currentIME = inputMethodHelper.getCurrentInputMethodId();
             String ourPackage = getPackageName();
-            int color = getResources().getColor(R.color.floating_ball_blue);
-            
-            if (inputMethodHelper.isCurrentInputMethod(ourPackage)) {
-                // 当前是Inputist输入法 - 高亮显示
-                floatingBall.setImageResource(R.drawable.ic_floating_ball_active);
-                floatingBall.setColorFilter(color);
-                floatingBall.setAlpha(1.0f);
-            } else {
-                // 当前不是Inputist输入法 - 半透明显示
-                floatingBall.setImageResource(R.drawable.ic_floating_ball_inactive);
-                floatingBall.setColorFilter(color);
-                floatingBall.setAlpha(0.75f);
-            }
+            return currentIME != null && currentIME.contains(ourPackage);
         } catch (Exception e) {
-            e.printStackTrace();
-            // 默认状态
-            floatingBall.setImageResource(R.drawable.ic_floating_ball_inactive);
-            int defaultColor = getResources().getColor(R.color.floating_ball_blue);
-            floatingBall.setColorFilter(defaultColor);
-            floatingBall.setAlpha(0.75f);
+            return false;
         }
     }
     

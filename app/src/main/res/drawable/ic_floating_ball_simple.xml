@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    
+    <!-- 简化的键盘图标 - 统一样式，节省资源 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M20,5H4C2.9,5 2,5.9 2,7v10c0,1.1 0.9,2 2,2h16c1.1,0 2,-0.9 2,-2V7C22,5.9 21.1,5 20,5zM20,17H4V7h16V17z"/>
+    
+    <!-- 简化的输入指示器 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M6,9h12v2H6V9z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M6,13h8v2H6V13z"/>
+    
+</vector>

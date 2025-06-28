@@ -8,7 +8,7 @@
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:layout_margin="4dp"
-        android:src="@drawable/ic_floating_ball_inactive"
+        android:src="@drawable/ic_floating_ball_simple"
         android:scaleType="centerInside"
         android:padding="8dp"
         android:contentDescription="@string/floating_ball_description"
