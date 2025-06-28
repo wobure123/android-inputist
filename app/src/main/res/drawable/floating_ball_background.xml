@@ -2,18 +2,15 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="oval">
     
-    <!-- 渐变背景 -->
+    <!-- 半透明渐变背景 -->
     <gradient
-        android:startColor="#FF4081"
-        android:endColor="#FF6B9D"
+        android:startColor="#CC4081"
+        android:endColor="#CC6B9D"
         android:angle="45" />
     
-    <!-- 阴影效果 -->
+    <!-- 细微的边框 -->
     <stroke
-        android:width="2dp"
-        android:color="#33FFFFFF" />
-    
-    <!-- 圆形形状 -->
-    <solid android:color="@color/primary_color" />
+        android:width="1dp"
+        android:color="#40FFFFFF" />
     
 </shape>

@@ -119,6 +119,8 @@ public class FloatingBallService extends Service {
                         isDragging = false;
                         // 添加触觉反馈
                         v.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY);
+                        // 拖拽开始时增加透明度
+                        floatingBall.animate().alpha(1.0f).setDuration(100).start();
                         return true;
                         
                     case MotionEvent.ACTION_MOVE:
@@ -127,7 +129,15 @@ public class FloatingBallService extends Service {
                         
                         // 更宽松的拖拽判断条件
                         if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
-                            isDragging = true;
+                            if (!isDragging) {
+                                isDragging = true;
+                                // 拖拽时放大悬浮球
+                                floatingBall.animate()
+                                    .scaleX(1.1f)
+                                    .scaleY(1.1f)
+                                    .setDuration(150)
+                                    .start();
+                            }
                             params.x += (int)deltaX;
                             params.y += (int)deltaY;
                             windowManager.updateViewLayout(floatingView, params);
@@ -140,12 +150,25 @@ public class FloatingBallService extends Service {
                         long upTime = System.currentTimeMillis();
                         if (!isDragging && (upTime - downTime) < 500) {
                             // 短点击 - 切换输入法
+                            // 恢复正常大小
+                            floatingBall.animate()
+                                .scaleX(1.0f)
+                                .scaleY(1.0f)
+                                .setDuration(100)
+                                .start();
                             // 添加视觉反馈
                             animateClick();
                             switchInputMethod();
                         } else if (isDragging) {
-                            // 拖拽结束 - 简单贴边
-                            snapToEdge();
+                            // 拖拽结束 - 恢复正常状态
+                            floatingBall.animate()
+                                .scaleX(1.0f)
+                                .scaleY(1.0f)
+                                .alpha(inputMethodHelper.isCurrentInputMethod(getPackageName()) ? 0.95f : 0.75f)
+                                .setDuration(200)
+                                .start();
+                            // 拖拽结束 - 允许自由移动，不强制贴边
+                            ensureWithinScreen();
                             savePosition();
                         }
                         return true;
@@ -156,19 +179,21 @@ public class FloatingBallService extends Service {
     }
     
     /**
-     * 点击动画效果
+     * 点击动画效果 - 优化动画
      */
     private void animateClick() {
         if (floatingBall != null) {
             floatingBall.animate()
-                .scaleX(0.9f)
-                .scaleY(0.9f)
-                .setDuration(100)
+                .scaleX(0.85f)
+                .scaleY(0.85f)
+                .alpha(0.6f)
+                .setDuration(80)
                 .withEndAction(() -> {
                     floatingBall.animate()
                         .scaleX(1.0f)
                         .scaleY(1.0f)
-                        .setDuration(100)
+                        .alpha(inputMethodHelper.isCurrentInputMethod(getPackageName()) ? 0.95f : 0.75f)
+                        .setDuration(120)
                         .start();
                 })
                 .start();
@@ -235,46 +260,40 @@ public class FloatingBallService extends Service {
     }
     
     /**
-     * 更新悬浮球图标状态 - 简化逻辑
+     * 更新悬浮球图标状态 - 优化透明度
      */
     private void updateFloatingBallIcon() {
         try {
             String ourPackage = getPackageName();
             
             if (inputMethodHelper.isCurrentInputMethod(ourPackage)) {
-                // 当前是Inputist输入法
+                // 当前是Inputist输入法 - 更高透明度表示激活状态
                 floatingBall.setImageResource(R.drawable.ic_floating_ball_active);
-                floatingBall.setAlpha(1.0f);
+                floatingBall.setAlpha(0.95f);
             } else {
-                // 当前不是Inputist输入法
+                // 当前不是Inputist输入法 - 稍低透明度表示非激活状态
                 floatingBall.setImageResource(R.drawable.ic_floating_ball_inactive);
-                floatingBall.setAlpha(0.8f);
+                floatingBall.setAlpha(0.75f);
             }
         } catch (Exception e) {
             e.printStackTrace();
             // 默认状态
             floatingBall.setImageResource(R.drawable.ic_floating_ball_inactive);
-            floatingBall.setAlpha(0.8f);
+            floatingBall.setAlpha(0.75f);
         }
     }
     
     /**
-     * 简单贴边功能 - 不隐藏，保持完全可见
+     * 确保悬浮球在屏幕范围内，允许自由移动
      */
-    private void snapToEdge() {
+    private void ensureWithinScreen() {
         int screenWidth = getResources().getDisplayMetrics().widthPixels;
-        int ballWidth = floatingView.getWidth();
-        
-        // 简单贴边到最近的边缘，但保持完全可见
-        if (params.x < screenWidth / 2) {
-            params.x = 0;  // 贴左边
-        } else {
-            params.x = screenWidth - ballWidth;  // 贴右边
-        }
-        
-        // 确保垂直位置在屏幕范围内
         int screenHeight = getResources().getDisplayMetrics().heightPixels;
+        int ballWidth = floatingView.getWidth();
         int ballHeight = floatingView.getHeight();
+        
+        // 确保悬浮球不超出屏幕边界，但允许在任意位置停留
+        params.x = Math.max(0, Math.min(params.x, screenWidth - ballWidth));
         params.y = Math.max(0, Math.min(params.y, screenHeight - ballHeight));
         
         windowManager.updateViewLayout(floatingView, params);
