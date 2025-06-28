@@ -16,12 +16,14 @@
 
         <!-- 标题 -->
         <TextView
+            android:id="@+id/tv_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="通用输入改写助手"
-            android:textSize="24sp"
+            android:text="Inputist 通用输入助手"
+            android:textSize="20sp"
             android:textStyle="bold"
             android:gravity="center"
+            android:layout_marginTop="8dp"
             android:layout_marginBottom="16dp" />
 
         <!-- 状态显示 -->

@@ -28,8 +28,8 @@ android {
         applicationId "com.inputassistant.universal"
         minSdk 24
         targetSdk 35  // 更新到 Android 15 支持
-        versionCode 8
-        versionName "2.6.0"  // 主要版本更新: 前台服务 + Release 优化
+        versionCode 9
+        versionName "2.7.0"  // UI优化版本: 编辑框可读性提升 + 自动版本号
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

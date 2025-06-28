@@ -108,7 +108,7 @@ public class FloatingBallService extends Service {
     private Notification createSimpleNotification() {
         return new NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Inputist 悬浮球")
-            .setContentText("正在启动...")
+            .setContentText("正在启动悬浮球服务...")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
@@ -233,8 +233,8 @@ public class FloatingBallService extends Service {
             );
             
             return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Inputist 输入助手")
-                .setContentText("悬浮球运行中，点击快速切换输入法")
+                .setContentTitle("Inputist 悬浮球运行中")
+                .setContentText("点击进入设置界面管理悬浮球")
                 .setSmallIcon(R.drawable.ic_floating_ball_simple)
                 .setContentIntent(mainPendingIntent)
                 .setOngoing(true) // 常驻通知，用户无法滑动删除
@@ -246,7 +246,7 @@ public class FloatingBallService extends Service {
                     closePendingIntent
                 )
                 .setStyle(new NotificationCompat.BigTextStyle()
-                    .bigText("悬浮球运行中，随时切换输入法。点击关闭按钮可停止服务。"))
+                    .bigText("悬浮球正在运行，随时切换输入法。点击通知进入设置，或点击关闭按钮停止服务。"))
                 .build();
         } catch (Exception e) {
             if (BuildConfig.DEBUG_LOGGING) {

@@ -1,6 +1,7 @@
 package com.inputassistant.universal;
 
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -39,6 +40,7 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
     private RecyclerView rvActions;
     private Button fabAddAction;  // 改为 Button 类型
     private TextView tvStatus;
+    private TextView tvTitle;  // 标题 TextView
     private Switch switchTextMode;  // 文本处理模式切换开关
     private TextView tvModeDescription;  // 模式描述文本
     private Switch switchFloatingBall;  // 悬浮球开关
@@ -69,10 +71,28 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
         rvActions = findViewById(R.id.rv_actions);
         fabAddAction = findViewById(R.id.fab_add_action);
         tvStatus = findViewById(R.id.tv_status);
+        tvTitle = findViewById(R.id.tv_title);
         switchTextMode = findViewById(R.id.switch_text_mode);
         tvModeDescription = findViewById(R.id.tv_mode_description);
         switchFloatingBall = findViewById(R.id.switch_floating_ball);
         btnFloatingBallPermission = findViewById(R.id.btn_floating_ball_permission);
+        
+        // 动态设置标题，包含版本号
+        setupTitle();
+    }
+
+    /**
+     * 动态设置标题，包含版本号
+     */
+    private void setupTitle() {
+        try {
+            String versionName = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+            String title = "Inputist 通用输入助手 v" + versionName;
+            tvTitle.setText(title);
+        } catch (Exception e) {
+            // 如果获取版本失败，使用默认标题
+            tvTitle.setText("Inputist 通用输入助手");
+        }
     }
 
     private void initRepository() {
