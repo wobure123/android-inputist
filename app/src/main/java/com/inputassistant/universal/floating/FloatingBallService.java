@@ -355,20 +355,10 @@ public class FloatingBallService extends Service {
      */
     private void switchInputMethod() {
         try {
-            // 获取当前输入法状态
+            // 获取当前输入法状态并保存
             String currentIME = inputMethodHelper.getCurrentInputMethodId();
-            String ourPackage = getPackageName();
-            
-            if (currentIME != null && currentIME.contains(ourPackage)) {
-                // 当前是我们的输入法
+            if (currentIME != null && !currentIME.isEmpty()) {
                 settingsRepository.savePreviousInputMethod(currentIME);
-                showToast("💡 选择其他输入法");
-            } else {
-                // 当前不是我们的输入法
-                if (currentIME != null && !currentIME.isEmpty()) {
-                    settingsRepository.savePreviousInputMethod(currentIME);
-                }
-                showToast("💡 选择Inputist输入法");
             }
             
             // 根据Android版本选择不同的调用方式
@@ -385,16 +375,12 @@ public class FloatingBallService extends Service {
                 inputMethodHelper.showInputMethodPicker();
             }
             
-            // 简化版本：移除状态更新，节省资源
-            // 用户通过点击悬浮球直接获得输入法选择器，无需状态指示
-            
         } catch (Exception e) {
             // 性能优化：Release 版本减少异常处理开销
             if (BuildConfig.DEBUG_LOGGING) {
                 e.printStackTrace();
             }
-            // 兜底方案
-            showToast("正在打开输入法选择器...");
+            // 兜底方案：直接调用输入法选择器
             inputMethodHelper.showInputMethodPicker();
         }
     }
@@ -410,20 +396,6 @@ public class FloatingBallService extends Service {
             if (BuildConfig.DEBUG_LOGGING) {
                 e.printStackTrace();
             }
-        }
-    }
-    
-    /**
-     * 简化版本的输入法状态检查（可选功能）
-     * 如果需要在 Toast 中显示不同提示，可以调用此方法
-     */
-    private boolean isOurInputMethodActive() {
-        try {
-            String currentIME = inputMethodHelper.getCurrentInputMethodId();
-            String ourPackage = getPackageName();
-            return currentIME != null && currentIME.contains(ourPackage);
-        } catch (Exception e) {
-            return false;
         }
     }
     

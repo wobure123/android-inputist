@@ -87,11 +87,11 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
     private void setupTitle() {
         try {
             String versionName = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
-            String title = "Inputist 通用输入助手 v" + versionName;
+            String title = "通用输入助手 v" + versionName;
             tvTitle.setText(title);
         } catch (Exception e) {
             // 如果获取版本失败，使用默认标题
-            tvTitle.setText("Inputist 通用输入助手");
+            tvTitle.setText("通用输入助手");
         }
     }
 
