@@ -28,8 +28,8 @@ android {
         applicationId "com.inputassistant.universal"
         minSdk 24
         targetSdk 35  // 更新到 Android 15 支持
-        versionCode 6
-        versionName "2.5.0"  // 语义化版本号: 主版本.次版本.修订版本 - 新增悬浮球快速输入法切换功能
+        versionCode 7
+        versionName "2.5.1"  // 语义化版本号: 主版本.次版本.修订版本 - 修复悬浮球切换逻辑和贴边隐藏效果
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

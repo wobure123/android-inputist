@@ -34,6 +34,7 @@ public class FloatingBallService extends Service {
     private WindowManager.LayoutParams params;
     private SettingsRepository settingsRepository;
     private InputMethodManager inputMethodManager;
+    private InputMethodSwitcher inputMethodSwitcher;
     
     // 悬浮球状态
     private boolean isDragging = false;
@@ -59,6 +60,7 @@ public class FloatingBallService extends Service {
         }
         
         inputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        inputMethodSwitcher = new InputMethodSwitcher(this);
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         
         createFloatingBall();
@@ -111,6 +113,9 @@ public class FloatingBallService extends Service {
                         initialY = params.y;
                         initialTouchX = event.getRawX();
                         initialTouchY = event.getRawY();
+                        
+                        // 显示悬浮球
+                        showFloatingBall();
                         return true;
                         
                     case MotionEvent.ACTION_MOVE:
@@ -146,55 +151,37 @@ public class FloatingBallService extends Service {
      */
     private void switchInputMethod() {
         try {
-            String currentIME = Settings.Secure.getString(
-                    getContentResolver(), 
-                    Settings.Secure.DEFAULT_INPUT_METHOD
-            );
-            
             String targetPackage = getPackageName();
             String inputistIME = targetPackage + "/.ime.TranslateInputMethodService";
             
-            if (currentIME != null && currentIME.contains(targetPackage)) {
-                // 当前是Inputist，切换到上一个输入法
+            if (inputMethodSwitcher.isCurrentInputMethodContains(targetPackage)) {
+                // 当前是Inputist，尝试切换到上一个输入法
                 String previousIME = settingsRepository.getPreviousInputMethod();
                 if (!previousIME.isEmpty() && !previousIME.equals(inputistIME)) {
-                    switchToInputMethod(previousIME);
+                    // 尝试切换到上一个输入法
+                    inputMethodSwitcher.switchToInputMethod(previousIME, true);
                 } else {
-                    // 如果没有保存的上一个输入法，显示输入法选择器
-                    showInputMethodPicker();
+                    // 如果没有保存的上一个输入法，显示选择器
+                    inputMethodSwitcher.showInputMethodPicker();
                 }
             } else {
                 // 当前不是Inputist，保存当前输入法并切换到Inputist
-                if (currentIME != null && !currentIME.equals(inputistIME)) {
+                String currentIME = inputMethodSwitcher.getCurrentInputMethodId();
+                if (!currentIME.isEmpty() && !currentIME.equals(inputistIME)) {
                     settingsRepository.savePreviousInputMethod(currentIME);
                 }
-                switchToInputMethod(inputistIME);
+                
+                // 尝试切换到Inputist
+                inputMethodSwitcher.switchToInputMethod(inputistIME, true);
             }
             
-            // 更新悬浮球图标状态
-            updateFloatingBallIcon();
+            // 延迟更新图标状态，因为输入法切换需要时间
+            floatingBall.postDelayed(() -> updateFloatingBallIcon(), 1000);
             
         } catch (Exception e) {
             e.printStackTrace();
-            // 如果自动切换失败，显示输入法选择器
-            showInputMethodPicker();
-        }
-    }
-    
-    /**
-     * 切换到指定输入法
-     */
-    private void switchToInputMethod(String inputMethodId) {
-        try {
-            Settings.Secure.putString(
-                    getContentResolver(),
-                    Settings.Secure.DEFAULT_INPUT_METHOD,
-                    inputMethodId
-            );
-        } catch (Exception e) {
-            e.printStackTrace();
-            // 如果没有权限，显示输入法选择器
-            showInputMethodPicker();
+            // 如果出错，显示输入法选择器
+            inputMethodSwitcher.showInputMethodPicker();
         }
     }
     
@@ -202,9 +189,7 @@ public class FloatingBallService extends Service {
      * 显示输入法选择器
      */
     private void showInputMethodPicker() {
-        if (inputMethodManager != null) {
-            inputMethodManager.showInputMethodPicker();
-        }
+        inputMethodSwitcher.showInputMethodPicker();
     }
     
     /**
@@ -212,25 +197,28 @@ public class FloatingBallService extends Service {
      */
     private void updateFloatingBallIcon() {
         try {
-            String currentIME = Settings.Secure.getString(
-                    getContentResolver(), 
-                    Settings.Secure.DEFAULT_INPUT_METHOD
-            );
+            String targetPackage = getPackageName();
             
-            if (currentIME != null && currentIME.contains(getPackageName())) {
+            if (inputMethodSwitcher.isCurrentInputMethodContains(targetPackage)) {
                 // 当前是Inputist输入法
                 floatingBall.setImageResource(R.drawable.ic_floating_ball_active);
-                floatingBall.setAlpha(1.0f);
+                if (floatingBall.getAlpha() == 1.0f) { // 只有在完全显示时才设置透明度
+                    floatingBall.setAlpha(1.0f);
+                }
             } else {
                 // 当前不是Inputist输入法
                 floatingBall.setImageResource(R.drawable.ic_floating_ball_inactive);
-                floatingBall.setAlpha(0.8f);
+                if (floatingBall.getAlpha() == 1.0f) { // 只有在完全显示时才设置透明度
+                    floatingBall.setAlpha(0.8f);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
             // 默认状态
             floatingBall.setImageResource(R.drawable.ic_floating_ball_inactive);
-            floatingBall.setAlpha(0.8f);
+            if (floatingBall.getAlpha() == 1.0f) {
+                floatingBall.setAlpha(0.8f);
+            }
         }
     }
     
@@ -242,12 +230,14 @@ public class FloatingBallService extends Service {
         int ballWidth = floatingView.getWidth();
         
         // 判断悬浮球应该贴向左边还是右边
-        if (params.x < screenWidth / 2) {
-            // 贴向左边
-            params.x = 0;
+        boolean snapToLeft = params.x < screenWidth / 2;
+        
+        if (snapToLeft) {
+            // 贴向左边，部分隐藏
+            params.x = -ballWidth / 2;
         } else {
-            // 贴向右边
-            params.x = screenWidth - ballWidth;
+            // 贴向右边，部分隐藏
+            params.x = screenWidth - ballWidth / 2;
         }
         
         // 确保不会超出屏幕边界
@@ -264,6 +254,38 @@ public class FloatingBallService extends Service {
         
         // 保存悬浮球位置
         settingsRepository.saveFloatingBallPosition(params.x, params.y);
+        
+        // 添加贴边半隐藏效果
+        floatingBall.animate()
+                .alpha(0.6f)
+                .setDuration(300)
+                .start();
+        
+        // 3秒后如果没有交互，进一步隐藏
+        floatingBall.removeCallbacks(hideRunnable);
+        floatingBall.postDelayed(hideRunnable, 3000);
+    }
+    
+    // 隐藏动画Runnable
+    private final Runnable hideRunnable = new Runnable() {
+        @Override
+        public void run() {
+            floatingBall.animate()
+                    .alpha(0.3f)
+                    .setDuration(300)
+                    .start();
+        }
+    };
+    
+    /**
+     * 显示悬浮球（在交互时调用）
+     */
+    private void showFloatingBall() {
+        floatingBall.removeCallbacks(hideRunnable);
+        floatingBall.animate()
+                .alpha(1.0f)
+                .setDuration(200)
+                .start();
     }
     
     @Override
