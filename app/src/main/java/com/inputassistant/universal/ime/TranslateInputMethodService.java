@@ -135,12 +135,7 @@ public class TranslateInputMethodService extends InputMethodService {
                             
                             // 延迟一点再切换，给系统时间处理
                             new android.os.Handler().postDelayed(() -> {
-                                try {
-                                    // 通知用户如何切换回原输入法
-                                    showToast("文本已更新，长按输入框可切换回原输入法");
-                                } catch (Exception e) {
-                                    Log.w(TAG, "Failed to show switch hint", e);
-                                }
+                                // 移除切换提示，让用户体验更简洁
                             }, 500);
                         } catch (Exception e) {
                             Log.w(TAG, "Failed to hide input method", e);
@@ -153,7 +148,6 @@ public class TranslateInputMethodService extends InputMethodService {
         } else {
             // 如果没有记录到上一个输入法，直接隐藏
             requestHideSelf(0);
-            showToast("文本已更新，请手动切换输入法");
         }
     }
 
@@ -231,27 +225,6 @@ public class TranslateInputMethodService extends InputMethodService {
         // 输入法切换按钮
         Button btnSwitchIme = keyboardView.findViewById(R.id.btn_switch_ime);
         btnSwitchIme.setOnClickListener(v -> showInputMethodPicker());
-    }
-
-    /**
-     * 显示处理完成对话框
-     */
-    private void showCompletionDialog() {
-        // 延迟显示，确保文本更新完成
-        new android.os.Handler().postDelayed(() -> {
-            try {
-                showToast("✅ 处理完成！点击'切换'按钮可快速切换输入法");
-                
-                // 移除自动隐藏功能，让用户自主选择何时切换
-                // 用户可以：
-                // 1. 点击"切换"按钮快速切换输入法
-                // 2. 继续使用基础编辑功能（删除、空格、换行）
-                // 3. 执行其他动作
-                
-            } catch (Exception e) {
-                Log.w(TAG, "Failed to show completion dialog", e);
-            }
-        }, 500);
     }
 
     /**
@@ -350,8 +323,7 @@ public class TranslateInputMethodService extends InputMethodService {
                         updateInputText(result);
                         tvStatus.setText("处理完成");
                         
-                        // 显示完成提示，并提供快捷切换选项
-                        showCompletionDialog();
+                        // 移除成功提示，让处理过程更简洁
                     }
 
                     @Override
@@ -428,9 +400,7 @@ public class TranslateInputMethodService extends InputMethodService {
                 
                 Log.d(TAG, "Text updated successfully");
                 
-                // 根据模式显示不同的提示信息
-                String mode = settingsRepository.isReplaceMode() ? "替换" : "拼接";
-                showToast("文本已更新（" + mode + "模式）");
+                // 移除成功提示，保持处理过程简洁
             } catch (Exception e) {
                 Log.e(TAG, "Error updating text", e);
                 showToast("更新文本失败");
