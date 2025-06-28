@@ -70,8 +70,8 @@ public class FloatingBallService extends Service {
         floatingView = inflater.inflate(R.layout.layout_floating_ball, null);
         floatingBall = floatingView.findViewById(R.id.floating_ball);
         
-        // 按照参考项目风格设置悬浮球样式
-        setupFloatingBallStyle();
+        // 设置简化的悬浮球样式（资源优化版本）
+        setupSimpleFloatingBallStyle();
         
         // 设置窗口参数
         int layoutFlag;
