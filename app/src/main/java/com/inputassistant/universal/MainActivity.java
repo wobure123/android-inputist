@@ -407,10 +407,10 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
             .setTitle("需要通知权限")
             .setMessage("⚠️ 重要提醒：\n\n" +
                        "悬浮球使用前台服务以保持稳定运行，这需要显示常驻通知。\n\n" +
-                       "• 通知优先级设置为"低"，减少干扰\n" +
+                       "• 通知优先级设置为低级，减少干扰\n" +
                        "• 通知中包含快捷关闭按钮\n" +
                        "• 这是 Android 系统的强制要求\n\n" +
-                       "点击"允许"将请求通知权限。")
+                       "点击允许将请求通知权限。")
             .setPositiveButton("允许", (dialog, which) -> {
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
                     ActivityCompat.requestPermissions(this, 
@@ -434,7 +434,7 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
             .setTitle("需要开启通知")
             .setMessage("⚠️ 重要提醒：\n\n" +
                        "悬浮球使用前台服务以保持稳定运行，这需要显示常驻通知。\n\n" +
-                       "• 通知优先级设置为"低"，减少干扰\n" +
+                       "• 通知优先级设置为低级，减少干扰\n" +
                        "• 通知中包含快捷关闭按钮\n" +
                        "• 这是 Android 系统的强制要求\n\n" +
                        "请在设置中开启 Inputist 的通知权限。")
