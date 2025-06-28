@@ -68,7 +68,13 @@ public class FloatingBallService extends Service {
         // 立即启动前台服务，避免ANR
         try {
             Notification notification = createSimpleNotification();
-            startForeground(NOTIFICATION_ID, notification);
+            
+            // Android 14+ (API 34+) 需要指定前台服务类型
+            if (Build.VERSION.SDK_INT >= 34) {
+                startForeground(NOTIFICATION_ID, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
+            } else {
+                startForeground(NOTIFICATION_ID, notification);
+            }
         } catch (Exception e) {
             android.widget.Toast.makeText(this, "启动前台服务失败: " + e.getMessage(), android.widget.Toast.LENGTH_LONG).show();
             stopSelf();
