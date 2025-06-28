@@ -198,10 +198,12 @@ public class FloatingBallService extends Service {
             
             // 根据Android版本选择不同的调用方式
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                // Android M+ 使用Activity方式（解决系统限制的关键）
+                // Android M+ 使用透明Activity方式（关键修复）
                 Intent intent = new Intent(this, KeyboardManagerActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                intent.putExtra(KeyboardManagerActivity.DELAY_SHOW_KEY, 200L);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | 
+                               Intent.FLAG_ACTIVITY_NO_ANIMATION |
+                               Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
+                intent.putExtra(KeyboardManagerActivity.DELAY_SHOW_KEY, 50L); // 进一步减少延迟
                 startActivity(intent);
             } else {
                 // Android M以下直接调用
@@ -210,7 +212,7 @@ public class FloatingBallService extends Service {
             
             // 延迟更新状态
             if (floatingBall != null) {
-                floatingBall.postDelayed(() -> updateFloatingBallIcon(), 1000);
+                floatingBall.postDelayed(() -> updateFloatingBallIcon(), 800);
             }
             
         } catch (Exception e) {

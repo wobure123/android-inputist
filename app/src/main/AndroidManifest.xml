@@ -60,10 +60,13 @@
         <activity
             android:name=".floating.KeyboardManagerActivity"
             android:exported="false"
-            android:theme="@style/Theme.UniversalInputAssistant"
-            android:launchMode="singleTask"
+            android:theme="@style/Theme.Transparent"
+            android:launchMode="singleInstance"
             android:excludeFromRecents="true"
-            android:noHistory="true" />
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:finishOnTaskLaunch="true"
+            android:clearTaskOnLaunch="true" />
         
         <!-- 输入法服务 -->
         <service
