@@ -5,15 +5,14 @@
 
     <ImageView
         android:id="@+id/floating_ball"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_margin="6dp"
-        android:background="@drawable/floating_ball_background"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_margin="4dp"
         android:src="@drawable/ic_floating_ball_inactive"
         android:scaleType="centerInside"
-        android:padding="10dp"
+        android:padding="8dp"
         android:contentDescription="@string/floating_ball_description"
-        android:elevation="6dp"
-        android:alpha="0.85" />
+        android:elevation="4dp"
+        android:background="@android:color/transparent" />
 
 </FrameLayout>

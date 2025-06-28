@@ -70,6 +70,9 @@ public class FloatingBallService extends Service {
         floatingView = inflater.inflate(R.layout.layout_floating_ball, null);
         floatingBall = floatingView.findViewById(R.id.floating_ball);
         
+        // 按照参考项目风格设置悬浮球样式
+        setupFloatingBallStyle();
+        
         // 设置窗口参数
         int layoutFlag;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -101,6 +104,23 @@ public class FloatingBallService extends Service {
         updateFloatingBallIcon();
     }
     
+    /**
+     * 设置悬浮球样式 - 参考项目风格
+     */
+    private void setupFloatingBallStyle() {
+        // 使用半透明的蓝色作为默认颜色，符合现代设计趋势
+        int color = getResources().getColor(R.color.floating_ball_blue);
+        
+        // 设置图标
+        floatingBall.setImageResource(R.drawable.ic_floating_ball_inactive);
+        
+        // 设置颜色滤镜
+        floatingBall.setColorFilter(color);
+        
+        // 设置初始透明度 - 更加透明，符合现代悬浮元素设计
+        floatingBall.setAlpha(0.8f);
+    }
+    
     private void setupTouchListener() {
         floatingView.setOnTouchListener(new View.OnTouchListener() {
             private long downTime;
@@ -119,25 +139,15 @@ public class FloatingBallService extends Service {
                         isDragging = false;
                         // 添加触觉反馈
                         v.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY);
-                        // 拖拽开始时增加透明度
-                        floatingBall.animate().alpha(1.0f).setDuration(100).start();
                         return true;
                         
                     case MotionEvent.ACTION_MOVE:
                         float deltaX = event.getRawX() - lastX;
                         float deltaY = event.getRawY() - lastY;
                         
-                        // 更宽松的拖拽判断条件
-                        if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
-                            if (!isDragging) {
-                                isDragging = true;
-                                // 拖拽时放大悬浮球
-                                floatingBall.animate()
-                                    .scaleX(1.1f)
-                                    .scaleY(1.1f)
-                                    .setDuration(150)
-                                    .start();
-                            }
+                        // 拖拽判断条件
+                        if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
+                            isDragging = true;
                             params.x += (int)deltaX;
                             params.y += (int)deltaY;
                             windowManager.updateViewLayout(floatingView, params);
@@ -150,24 +160,10 @@ public class FloatingBallService extends Service {
                         long upTime = System.currentTimeMillis();
                         if (!isDragging && (upTime - downTime) < 500) {
                             // 短点击 - 切换输入法
-                            // 恢复正常大小
-                            floatingBall.animate()
-                                .scaleX(1.0f)
-                                .scaleY(1.0f)
-                                .setDuration(100)
-                                .start();
-                            // 添加视觉反馈
                             animateClick();
                             switchInputMethod();
                         } else if (isDragging) {
-                            // 拖拽结束 - 恢复正常状态
-                            floatingBall.animate()
-                                .scaleX(1.0f)
-                                .scaleY(1.0f)
-                                .alpha(inputMethodHelper.isCurrentInputMethod(getPackageName()) ? 0.95f : 0.75f)
-                                .setDuration(200)
-                                .start();
-                            // 拖拽结束 - 允许自由移动，不强制贴边
+                            // 拖拽结束 - 确保在屏幕范围内
                             ensureWithinScreen();
                             savePosition();
                         }
@@ -179,21 +175,19 @@ public class FloatingBallService extends Service {
     }
     
     /**
-     * 点击动画效果 - 优化动画
+     * 点击动画效果 - 参考项目简洁风格
      */
     private void animateClick() {
         if (floatingBall != null) {
             floatingBall.animate()
-                .scaleX(0.85f)
-                .scaleY(0.85f)
-                .alpha(0.6f)
-                .setDuration(80)
+                .scaleX(0.8f)
+                .scaleY(0.8f)
+                .setDuration(100)
                 .withEndAction(() -> {
                     floatingBall.animate()
                         .scaleX(1.0f)
                         .scaleY(1.0f)
-                        .alpha(inputMethodHelper.isCurrentInputMethod(getPackageName()) ? 0.95f : 0.75f)
-                        .setDuration(120)
+                        .setDuration(150)
                         .start();
                 })
                 .start();
@@ -260,25 +254,30 @@ public class FloatingBallService extends Service {
     }
     
     /**
-     * 更新悬浮球图标状态 - 优化透明度
+     * 更新悬浮球图标状态 - 参考项目风格
      */
     private void updateFloatingBallIcon() {
         try {
             String ourPackage = getPackageName();
+            int color = getResources().getColor(R.color.floating_ball_blue);
             
             if (inputMethodHelper.isCurrentInputMethod(ourPackage)) {
-                // 当前是Inputist输入法 - 更高透明度表示激活状态
+                // 当前是Inputist输入法 - 高亮显示
                 floatingBall.setImageResource(R.drawable.ic_floating_ball_active);
-                floatingBall.setAlpha(0.95f);
+                floatingBall.setColorFilter(color);
+                floatingBall.setAlpha(1.0f);
             } else {
-                // 当前不是Inputist输入法 - 稍低透明度表示非激活状态
+                // 当前不是Inputist输入法 - 半透明显示
                 floatingBall.setImageResource(R.drawable.ic_floating_ball_inactive);
+                floatingBall.setColorFilter(color);
                 floatingBall.setAlpha(0.75f);
             }
         } catch (Exception e) {
             e.printStackTrace();
             // 默认状态
             floatingBall.setImageResource(R.drawable.ic_floating_ball_inactive);
+            int defaultColor = getResources().getColor(R.color.floating_ball_blue);
+            floatingBall.setColorFilter(defaultColor);
             floatingBall.setAlpha(0.75f);
         }
     }

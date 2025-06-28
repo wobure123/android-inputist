@@ -30,4 +30,12 @@
     <color name="black">#000000</color>
     <color name="transparent">#00000000</color>
     
+    <!-- 悬浮球颜色选项 -->
+    <color name="floating_ball_blue">#CC2196F3</color>
+    <color name="floating_ball_green">#CC4CAF50</color>
+    <color name="floating_ball_orange">#CCFF9800</color>
+    <color name="floating_ball_purple">#CC9C27B0</color>
+    <color name="floating_ball_red">#CCF44336</color>
+    <color name="floating_ball_teal">#CC009688</color>
+    
 </resources>
