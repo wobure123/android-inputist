@@ -23,6 +23,9 @@
     
     <!-- 开机自启动权限（可选，用于悬浮球开机启动） -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    
+    <!-- 触觉反馈权限 -->
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
         android:allowBackup="true"
@@ -52,6 +55,15 @@
             android:exported="false"
             android:theme="@style/Theme.UniversalInputAssistant"
             android:parentActivityName=".MainActivity" />
+        
+        <!-- 输入法管理活动（用于悬浮球切换输入法） -->
+        <activity
+            android:name=".floating.KeyboardManagerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.UniversalInputAssistant"
+            android:launchMode="singleTask"
+            android:excludeFromRecents="true"
+            android:noHistory="true" />
         
         <!-- 输入法服务 -->
         <service

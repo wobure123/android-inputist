@@ -34,6 +34,7 @@ public class FloatingBallService extends Service {
     private WindowManager.LayoutParams params;
     private SettingsRepository settingsRepository;
     private InputMethodManager inputMethodManager;
+    private InputMethodHelper inputMethodHelper;
     
     // 悬浮球状态
     private boolean isDragging = false;
@@ -57,6 +58,7 @@ public class FloatingBallService extends Service {
         }
         
         inputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        inputMethodHelper = new InputMethodHelper(this);
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         
         createFloatingBall();
@@ -73,7 +75,7 @@ public class FloatingBallService extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             layoutFlag = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
         } else {
-            layoutFlag = WindowManager.LayoutParams.TYPE_PHONE;
+            layoutFlag = WindowManager.LayoutParams.TYPE_SYSTEM_ALERT;
         }
         
         params = new WindowManager.LayoutParams(
@@ -115,6 +117,8 @@ public class FloatingBallService extends Service {
                         initialX = params.x;
                         initialY = params.y;
                         isDragging = false;
+                        // 添加触觉反馈
+                        v.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY);
                         return true;
                         
                     case MotionEvent.ACTION_MOVE:
@@ -136,6 +140,8 @@ public class FloatingBallService extends Service {
                         long upTime = System.currentTimeMillis();
                         if (!isDragging && (upTime - downTime) < 500) {
                             // 短点击 - 切换输入法
+                            // 添加视觉反馈
+                            animateClick();
                             switchInputMethod();
                         } else if (isDragging) {
                             // 拖拽结束 - 简单贴边
@@ -150,65 +156,68 @@ public class FloatingBallService extends Service {
     }
     
     /**
-     * 切换输入法 - 简化可靠的方案
+     * 点击动画效果
+     */
+    private void animateClick() {
+        if (floatingBall != null) {
+            floatingBall.animate()
+                .scaleX(0.9f)
+                .scaleY(0.9f)
+                .setDuration(100)
+                .withEndAction(() -> {
+                    floatingBall.animate()
+                        .scaleX(1.0f)
+                        .scaleY(1.0f)
+                        .setDuration(100)
+                        .start();
+                })
+                .start();
+        }
+    }
+    
+    /**
+     * 切换输入法 - 使用Activity方式解决系统限制
      */
     private void switchInputMethod() {
         try {
-            String currentIME = getCurrentInputMethodId();
+            // 获取当前输入法状态
+            String currentIME = inputMethodHelper.getCurrentInputMethodId();
             String ourPackage = getPackageName();
             
             if (currentIME != null && currentIME.contains(ourPackage)) {
-                // 当前是我们的输入法，记住这个状态并提示选择其他输入法
+                // 当前是我们的输入法
                 settingsRepository.savePreviousInputMethod(currentIME);
-                showToast("💡 选择其他输入法可快速切换回来");
+                showToast("💡 选择其他输入法");
             } else {
-                // 当前不是我们的输入法，记住它并提示选择Inputist
+                // 当前不是我们的输入法
                 if (currentIME != null && !currentIME.isEmpty()) {
                     settingsRepository.savePreviousInputMethod(currentIME);
                 }
-                showToast("💡 选择Inputist输入法开始使用AI功能");
+                showToast("💡 选择Inputist输入法");
             }
             
-            // 直接显示输入法选择器（最可靠的方式）
-            showInputMethodPicker();
+            // 根据Android版本选择不同的调用方式
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                // Android M+ 使用Activity方式（解决系统限制的关键）
+                Intent intent = new Intent(this, KeyboardManagerActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                intent.putExtra(KeyboardManagerActivity.DELAY_SHOW_KEY, 200L);
+                startActivity(intent);
+            } else {
+                // Android M以下直接调用
+                inputMethodHelper.showInputMethodPicker();
+            }
             
-            // 延迟更新状态，给用户时间选择
+            // 延迟更新状态
             if (floatingBall != null) {
                 floatingBall.postDelayed(() -> updateFloatingBallIcon(), 1000);
             }
             
         } catch (Exception e) {
             e.printStackTrace();
-            showToast("打开输入法选择器");
-            showInputMethodPicker();
-        }
-    }
-    
-    /**
-     * 获取当前输入法ID
-     */
-    private String getCurrentInputMethodId() {
-        try {
-            return Settings.Secure.getString(
-                    getContentResolver(),
-                    Settings.Secure.DEFAULT_INPUT_METHOD
-            );
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "";
-        }
-    }
-    
-    /**
-     * 显示输入法选择器 - 简化可靠的方案
-     */
-    private void showInputMethodPicker() {
-        try {
-            if (inputMethodManager != null) {
-                inputMethodManager.showInputMethodPicker();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+            // 兜底方案
+            showToast("正在打开输入法选择器...");
+            inputMethodHelper.showInputMethodPicker();
         }
     }
     
@@ -228,10 +237,9 @@ public class FloatingBallService extends Service {
      */
     private void updateFloatingBallIcon() {
         try {
-            String currentIME = getCurrentInputMethodId();
             String ourPackage = getPackageName();
             
-            if (currentIME != null && currentIME.contains(ourPackage)) {
+            if (inputMethodHelper.isCurrentInputMethod(ourPackage)) {
                 // 当前是Inputist输入法
                 floatingBall.setImageResource(R.drawable.ic_floating_ball_active);
                 floatingBall.setAlpha(1.0f);
