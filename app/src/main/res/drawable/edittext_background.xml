@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 获得焦点时的状态 -->
+    <item android:state_focused="true">
+        <shape>
+            <solid android:color="#FFFFFF" />
+            <stroke 
+                android:width="2dp" 
+                android:color="@color/primary_color" />
+            <corners android:radius="8dp" />
+        </shape>
+    </item>
+    
+    <!-- 默认状态 -->
+    <item>
+        <shape>
+            <solid android:color="#FFFFFF" />
+            <stroke 
+                android:width="2dp" 
+                android:color="#D0D0D0" />
+            <corners android:radius="8dp" />
+        </shape>
+    </item>
+</selector>

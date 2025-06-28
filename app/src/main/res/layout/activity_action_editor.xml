@@ -34,7 +34,11 @@
             android:inputType="text"
             android:maxLines="1"
             android:imeOptions="actionNext"
-            android:background="@drawable/example_background"
+            android:hint="请输入动作名称"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_hint"
+            android:textSize="16sp"
+            android:background="@drawable/edittext_background"
             android:padding="12dp"
             android:layout_marginBottom="16dp" />
 
@@ -55,7 +59,11 @@
             android:maxLines="10"
             android:gravity="start|top"
             android:scrollbars="vertical"
-            android:background="@drawable/example_background"
+            android:hint="请输入系统指令，例如：你是一个专业的翻译专家..."
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_hint"
+            android:textSize="16sp"
+            android:background="@drawable/edittext_background"
             android:padding="12dp"
             android:layout_marginBottom="24dp" />
 
@@ -66,7 +74,7 @@
             android:text="💡 示例系统指令：\n\n• 翻译：你是一个专业的翻译专家，请将用户输入的文本翻译成英文\n• 润色：你是一个文案专家，请帮助润色和改进用户的文本\n• 代码解释：你是一个编程专家，请解释用户提供的代码"
             android:textSize="12sp"
             android:textColor="@color/text_secondary"
-            android:background="@drawable/example_background"
+            android:background="@drawable/hint_background"
             android:padding="12dp"
             android:layout_marginBottom="24dp" />
 

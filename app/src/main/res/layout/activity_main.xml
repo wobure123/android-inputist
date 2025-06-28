@@ -65,7 +65,10 @@
                     android:layout_height="wrap_content"
                     android:inputType="textUri"
                     android:text="https://api.openai.com/v1"
-                    android:background="@drawable/example_background"
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="@color/text_hint"
+                    android:textSize="16sp"
+                    android:background="@drawable/edittext_background"
                     android:padding="12dp"
                     android:layout_marginBottom="16dp" />
 
@@ -82,7 +85,11 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textPassword"
-                    android:background="@drawable/example_background"
+                    android:hint="请输入 API Key"
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="@color/text_hint"
+                    android:textSize="16sp"
+                    android:background="@drawable/edittext_background"
                     android:padding="12dp"
                     android:layout_marginBottom="16dp" />
 
@@ -100,7 +107,10 @@
                     android:layout_height="wrap_content"
                     android:inputType="text"
                     android:text="gpt-3.5-turbo"
-                    android:background="@drawable/example_background"
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="@color/text_hint"
+                    android:textSize="16sp"
+                    android:background="@drawable/edittext_background"
                     android:padding="12dp"
                     android:layout_marginBottom="16dp" />
 

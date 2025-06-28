@@ -235,7 +235,7 @@ public class FloatingBallService extends Service {
             return new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Inputist 输入助手")
                 .setContentText("悬浮球运行中，点击快速切换输入法")
-                .setSmallIcon(R.drawable.ic_notification_floating_ball)
+                .setSmallIcon(R.drawable.ic_floating_ball_simple)
                 .setContentIntent(mainPendingIntent)
                 .setOngoing(true) // 常驻通知，用户无法滑动删除
                 .setPriority(NotificationCompat.PRIORITY_LOW) // 低优先级，减少干扰
