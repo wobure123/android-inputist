@@ -20,6 +20,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.ImageView;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
+import com.inputassistant.universal.BuildConfig;
 import com.inputassistant.universal.MainActivity;
 import com.inputassistant.universal.R;
 import com.inputassistant.universal.repository.SettingsRepository;
@@ -56,6 +57,7 @@ public class FloatingBallService extends Service {
         
         // 检查悬浮窗权限
         if (!Settings.canDrawOverlays(this)) {
+            android.widget.Toast.makeText(this, "缺少悬浮窗权限", android.widget.Toast.LENGTH_SHORT).show();
             stopSelf();
             return;
         }
@@ -63,22 +65,48 @@ public class FloatingBallService extends Service {
         // 创建通知渠道（Android 8.0+）
         createNotificationChannel();
         
-        // 启动前台服务
-        startForeground(NOTIFICATION_ID, createNotification());
-        
+        // 立即启动前台服务，避免ANR
         try {
-            settingsRepository = new SettingsRepository(this);
-        } catch (GeneralSecurityException | IOException e) {
-            e.printStackTrace();
+            Notification notification = createSimpleNotification();
+            startForeground(NOTIFICATION_ID, notification);
+        } catch (Exception e) {
+            android.widget.Toast.makeText(this, "启动前台服务失败: " + e.getMessage(), android.widget.Toast.LENGTH_LONG).show();
             stopSelf();
             return;
         }
         
+        // 初始化其他组件
+        try {
+            initializeComponents();
+            createFloatingBall();
+            android.widget.Toast.makeText(this, "悬浮球启动成功", android.widget.Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            android.widget.Toast.makeText(this, "初始化失败: " + e.getMessage(), android.widget.Toast.LENGTH_LONG).show();
+            stopSelf();
+        }
+    }
+    
+    /**
+     * 初始化组件
+     */
+    private void initializeComponents() throws GeneralSecurityException, IOException {
+        settingsRepository = new SettingsRepository(this);
         inputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         inputMethodHelper = new InputMethodHelper(this);
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-        
-        createFloatingBall();
+    }
+    
+    /**
+     * 创建简化的通知（用于快速启动前台服务）
+     */
+    private Notification createSimpleNotification() {
+        return new NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Inputist 悬浮球")
+            .setContentText("正在启动...")
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
+            .build();
     }
     
     private void createFloatingBall() {
@@ -115,10 +143,38 @@ public class FloatingBallService extends Service {
         setupTouchListener();
         
         // 添加到窗口管理器
-        windowManager.addView(floatingView, params);
-        
-        // 设置统一的悬浮球样式（资源优化版本）
-        setupSimpleFloatingBallStyle();
+        try {
+            windowManager.addView(floatingView, params);
+            
+            // 悬浮球创建成功后，更新为完整的通知
+            updateNotification();
+            
+        } catch (Exception e) {
+            if (BuildConfig.DEBUG_LOGGING) {
+                e.printStackTrace();
+            }
+            android.widget.Toast.makeText(this, "添加悬浮窗失败: " + e.getMessage(), android.widget.Toast.LENGTH_LONG).show();
+            // 如果添加悬浮窗失败，停止服务
+            stopSelf();
+            return;
+        }
+    }
+    
+    /**
+     * 更新通知为完整版本
+     */
+    private void updateNotification() {
+        try {
+            NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            if (notificationManager != null) {
+                notificationManager.notify(NOTIFICATION_ID, createNotification());
+            }
+        } catch (Exception e) {
+            // 更新通知失败不影响服务运行
+            if (BuildConfig.DEBUG_LOGGING) {
+                e.printStackTrace();
+            }
+        }
     }
     
     /**
@@ -126,19 +182,25 @@ public class FloatingBallService extends Service {
      */
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                CHANNEL_ID,
-                "悬浮球服务",
-                NotificationManager.IMPORTANCE_LOW
-            );
-            channel.setDescription("输入法悬浮球后台服务，确保功能稳定运行");
-            channel.setShowBadge(false);
-            channel.setSound(null, null); // 静音
-            channel.enableVibration(false); // 关闭震动
-            
-            NotificationManager manager = getSystemService(NotificationManager.class);
-            if (manager != null) {
-                manager.createNotificationChannel(channel);
+            try {
+                NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID,
+                    "悬浮球服务",
+                    NotificationManager.IMPORTANCE_LOW
+                );
+                channel.setDescription("输入法悬浮球后台服务，确保功能稳定运行");
+                channel.setShowBadge(false);
+                channel.setSound(null, null); // 静音
+                channel.enableVibration(false); // 关闭震动
+                
+                NotificationManager manager = getSystemService(NotificationManager.class);
+                if (manager != null) {
+                    manager.createNotificationChannel(channel);
+                }
+            } catch (Exception e) {
+                if (BuildConfig.DEBUG_LOGGING) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -147,38 +209,51 @@ public class FloatingBallService extends Service {
      * 创建前台服务通知（带快捷开关）
      */
     private Notification createNotification() {
-        // 点击通知打开主界面
-        Intent mainIntent = new Intent(this, MainActivity.class);
-        mainIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent mainPendingIntent = PendingIntent.getActivity(
-            this, 0, mainIntent, 
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0
-        );
-        
-        // 关闭悬浮球的快捷按钮
-        Intent closeIntent = new Intent(this, FloatingBallService.class);
-        closeIntent.setAction(ACTION_CLOSE_FLOATING_BALL);
-        PendingIntent closePendingIntent = PendingIntent.getService(
-            this, 0, closeIntent,
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0
-        );
-        
-        return new NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Inputist 输入助手")
-            .setContentText("悬浮球运行中，点击快速切换输入法")
-            .setSmallIcon(R.drawable.ic_notification_floating_ball)
-            .setContentIntent(mainPendingIntent)
-            .setOngoing(true) // 常驻通知，用户无法滑动删除
-            .setPriority(NotificationCompat.PRIORITY_LOW) // 低优先级，减少干扰
-            .setShowWhen(false) // 不显示时间
-            .addAction(
-                R.drawable.ic_delete, // 使用删除图标
-                "关闭悬浮球",
-                closePendingIntent
-            )
-            .setStyle(new NotificationCompat.BigTextStyle()
-                .bigText("悬浮球运行中，随时切换输入法。点击关闭按钮可停止服务。"))
-            .build();
+        try {
+            // 点击通知打开主界面
+            Intent mainIntent = new Intent(this, MainActivity.class);
+            mainIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            PendingIntent mainPendingIntent = PendingIntent.getActivity(
+                this, 0, mainIntent, 
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0
+            );
+            
+            // 关闭悬浮球的快捷按钮
+            Intent closeIntent = new Intent(this, FloatingBallService.class);
+            closeIntent.setAction(ACTION_CLOSE_FLOATING_BALL);
+            PendingIntent closePendingIntent = PendingIntent.getService(
+                this, 0, closeIntent,
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0
+            );
+            
+            return new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle("Inputist 输入助手")
+                .setContentText("悬浮球运行中，点击快速切换输入法")
+                .setSmallIcon(R.drawable.ic_notification_floating_ball)
+                .setContentIntent(mainPendingIntent)
+                .setOngoing(true) // 常驻通知，用户无法滑动删除
+                .setPriority(NotificationCompat.PRIORITY_LOW) // 低优先级，减少干扰
+                .setShowWhen(false) // 不显示时间
+                .addAction(
+                    R.drawable.ic_delete, // 使用删除图标
+                    "关闭悬浮球",
+                    closePendingIntent
+                )
+                .setStyle(new NotificationCompat.BigTextStyle()
+                    .bigText("悬浮球运行中，随时切换输入法。点击关闭按钮可停止服务。"))
+                .build();
+        } catch (Exception e) {
+            if (BuildConfig.DEBUG_LOGGING) {
+                e.printStackTrace();
+            }
+            // 创建一个简化的通知作为后备
+            return new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle("Inputist 悬浮球")
+                .setContentText("服务运行中")
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .build();
+        }
     }
     
     /**
@@ -308,7 +383,10 @@ public class FloatingBallService extends Service {
             // 用户通过点击悬浮球直接获得输入法选择器，无需状态指示
             
         } catch (Exception e) {
-            e.printStackTrace();
+            // 性能优化：Release 版本减少异常处理开销
+            if (BuildConfig.DEBUG_LOGGING) {
+                e.printStackTrace();
+            }
             // 兜底方案
             showToast("正在打开输入法选择器...");
             inputMethodHelper.showInputMethodPicker();
@@ -316,13 +394,16 @@ public class FloatingBallService extends Service {
     }
     
     /**
-     * 显示提示消息
+     * 显示提示消息（性能优化版本）
      */
     private void showToast(String message) {
         try {
             android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
-            e.printStackTrace();
+            // Release 版本中，只在 DEBUG_LOGGING 启用时打印日志
+            if (BuildConfig.DEBUG_LOGGING) {
+                e.printStackTrace();
+            }
         }
     }
     
@@ -375,7 +456,9 @@ public class FloatingBallService extends Service {
             try {
                 settingsRepository.setFloatingBallEnabled(false);
             } catch (Exception e) {
-                e.printStackTrace();
+                if (BuildConfig.DEBUG_LOGGING) {
+                    e.printStackTrace();
+                }
             }
             
             // 显示提示
@@ -407,7 +490,9 @@ public class FloatingBallService extends Service {
             try {
                 windowManager.removeView(floatingView);
             } catch (Exception e) {
-                e.printStackTrace();
+                if (BuildConfig.DEBUG_LOGGING) {
+                    e.printStackTrace();
+                }
             }
         }
     }

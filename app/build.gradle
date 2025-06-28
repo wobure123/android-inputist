@@ -28,8 +28,8 @@ android {
         applicationId "com.inputassistant.universal"
         minSdk 24
         targetSdk 35  // 更新到 Android 15 支持
-        versionCode 7
-        versionName "2.5.1"  // 语义化版本号: 主版本.次版本.修订版本 - 修复悬浮球切换逻辑和贴边隐藏效果
+        versionCode 8
+        versionName "2.6.0"  // 主要版本更新: 前台服务 + Release 优化
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -39,18 +39,30 @@ android {
             debuggable true
             applicationIdSuffix ".debug"    // Debug版本添加后缀
             versionNameSuffix "-debug"      // 版本名添加debug标识
+            buildConfigField "boolean", "DEBUG_LOGGING", "true"
+            buildConfigField "boolean", "PERFORMANCE_MONITORING", "true"
             // 使用统一的debug签名配置
         }
         release {
             debuggable false                // 禁用调试功能
-            minifyEnabled false             // 禁用代码混淆（重要改动）
-            shrinkResources false           // 禁用资源压缩（必须与minifyEnabled保持一致）
+            minifyEnabled true              // 启用代码混淆和优化
+            shrinkResources true            // 启用资源压缩
+            zipAlignEnabled true            // 启用ZIP对齐优化
             
-            // 使用固定的 debug 签名确保一致性
+            // 性能优化配置
+            buildConfigField "boolean", "DEBUG_LOGGING", "false"
+            buildConfigField "boolean", "PERFORMANCE_MONITORING", "false"
+            
+            // 使用固定的 debug 签名确保一致性（开发阶段）
             signingConfig signingConfigs.release
             
-            // 由于禁用了代码混淆，可以移除proguardFiles配置
-            // proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // 代码混淆和优化配置
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            
+            // 编译优化选项
+            if (project.hasProperty('android.enableR8.fullMode')) {
+                android.enableR8.fullMode = true
+            }
         }
     }
     
@@ -66,6 +78,24 @@ android {
         
         // 忽略特定的lint规则
         disable 'ResAuto'
+    }
+    
+    // Release 版本性能优化
+    buildFeatures {
+        buildConfig true    // 启用 BuildConfig（用于运行时判断）
+    }
+    
+    // 编译优化选项
+    bundle {
+        language {
+            enableSplit = true  // 按语言分包
+        }
+        density {
+            enableSplit = true  // 按屏幕密度分包
+        }
+        abi {
+            enableSplit = true  // 按架构分包
+        }
     }
 }
 
