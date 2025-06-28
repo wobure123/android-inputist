@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    
+    <!-- 键盘图标 - 非激活状态 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.7"
+        android:pathData="M20,5H4C2.9,5 2,5.9 2,7v10c0,1.1 0.9,2 2,2h16c1.1,0 2,-0.9 2,-2V7C22,5.9 21.1,5 20,5zM20,17H4V7h16V17z"/>
+    
+    <!-- 输入法指示器 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.7"
+        android:pathData="M6,9h12v2H6V9z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.7"
+        android:pathData="M6,13h8v2H6V13z"/>
+    
+    <!-- 切换箭头指示器 -->
+    <path
+        android:fillColor="#FFC107"
+        android:pathData="M16,15l-4,4 -4,-4h2.5v-3h3v3H16z"/>
+    
+</vector>

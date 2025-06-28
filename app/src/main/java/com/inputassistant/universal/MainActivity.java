@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.inputassistant.universal.adapter.ActionAdapter;
+import com.inputassistant.universal.floating.FloatingBallService;
 import com.inputassistant.universal.model.Action;
 import com.inputassistant.universal.repository.SettingsRepository;
 
@@ -35,6 +36,8 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
     private TextView tvStatus;
     private Switch switchTextMode;  // 文本处理模式切换开关
     private TextView tvModeDescription;  // 模式描述文本
+    private Switch switchFloatingBall;  // 悬浮球开关
+    private Button btnFloatingBallPermission;  // 悬浮球权限按钮
     
     private SettingsRepository settingsRepository;
     private ActionAdapter actionAdapter;
@@ -63,6 +66,8 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
         tvStatus = findViewById(R.id.tv_status);
         switchTextMode = findViewById(R.id.switch_text_mode);
         tvModeDescription = findViewById(R.id.tv_mode_description);
+        switchFloatingBall = findViewById(R.id.switch_floating_ball);
+        btnFloatingBallPermission = findViewById(R.id.btn_floating_ball_permission);
     }
 
     private void initRepository() {
@@ -89,6 +94,9 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
         
         // 初始化文本处理模式设置
         initTextModeSettings();
+        
+        // 初始化悬浮球设置
+        initFloatingBallSettings();
     }
 
     private void initTextModeSettings() {
@@ -96,6 +104,25 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
         boolean isReplaceMode = settingsRepository.isReplaceMode();
         switchTextMode.setChecked(isReplaceMode);
         updateModeDescription();
+    }
+
+    private void initFloatingBallSettings() {
+        // 初始化悬浮球开关状态
+        boolean isFloatingBallEnabled = settingsRepository.isFloatingBallEnabled();
+        switchFloatingBall.setChecked(isFloatingBallEnabled);
+        
+        // 更新权限按钮状态
+        updateFloatingBallPermissionButton();
+    }
+
+    private void updateFloatingBallPermissionButton() {
+        if (Settings.canDrawOverlays(this)) {
+            btnFloatingBallPermission.setText("✓ 悬浮权限已授予");
+            btnFloatingBallPermission.setEnabled(false);
+        } else {
+            btnFloatingBallPermission.setText("授予悬浮权限");
+            btnFloatingBallPermission.setEnabled(true);
+        }
     }
 
     private void updateModeDescription() {
@@ -123,6 +150,26 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
             updateModeDescription();
             showToast(isChecked ? "已切换到替换模式" : "已切换到拼接模式");
         });
+        
+        // 悬浮球开关监听
+        switchFloatingBall.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                // 启用悬浮球
+                if (Settings.canDrawOverlays(this)) {
+                    enableFloatingBall();
+                } else {
+                    // 没有权限，取消勾选并提示用户授权
+                    switchFloatingBall.setChecked(false);
+                    showToast("请先授予悬浮权限");
+                }
+            } else {
+                // 禁用悬浮球
+                disableFloatingBall();
+            }
+        });
+        
+        // 悬浮球权限按钮监听
+        btnFloatingBallPermission.setOnClickListener(v -> requestFloatingBallPermission());
     }
 
     private void saveApiSettings() {
@@ -177,6 +224,14 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_ACTION_EDIT && resultCode == RESULT_OK) {
             loadActions(); // 刷新Action列表
+        } else if (requestCode == REQUEST_FLOATING_BALL_PERMISSION) {
+            // 悬浮球权限请求结果
+            if (Settings.canDrawOverlays(this)) {
+                updateFloatingBallPermissionButton();
+                showToast("悬浮权限已授予，现在可以启用悬浮球功能");
+            } else {
+                showToast("未授予悬浮权限，无法使用悬浮球功能");
+            }
         }
     }
 
@@ -241,9 +296,51 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 
+    /**
+     * 启用悬浮球
+     */
+    private void enableFloatingBall() {
+        settingsRepository.setFloatingBallEnabled(true);
+        Intent serviceIntent = new Intent(this, FloatingBallService.class);
+        startService(serviceIntent);
+        showToast("悬浮球已启用");
+    }
+
+    /**
+     * 禁用悬浮球
+     */
+    private void disableFloatingBall() {
+        settingsRepository.setFloatingBallEnabled(false);
+        Intent serviceIntent = new Intent(this, FloatingBallService.class);
+        stopService(serviceIntent);
+        showToast("悬浮球已禁用");
+    }
+
+    /**
+     * 请求悬浮球权限
+     */
+    private void requestFloatingBallPermission() {
+        if (!Settings.canDrawOverlays(this)) {
+            new AlertDialog.Builder(this)
+                    .setTitle("需要悬浮权限")
+                    .setMessage("悬浮球功能需要在其他应用上层显示的权限，请在接下来的设置页面中允许此权限。")
+                    .setPositiveButton("去设置", (dialog, which) -> {
+                        Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                Uri.parse("package:" + getPackageName()));
+                        startActivityForResult(intent, REQUEST_FLOATING_BALL_PERMISSION);
+                    })
+                    .setNegativeButton("取消", null)
+                    .show();
+        }
+    }
+
+    private static final int REQUEST_FLOATING_BALL_PERMISSION = 2;
+
     @Override
     protected void onResume() {
         super.onResume();
         updateStatus();
+        // 更新悬浮球权限按钮状态
+        updateFloatingBallPermissionButton();
     }
 }

@@ -6,4 +6,5 @@
     <string name="action_delete">删除</string>
     <string name="action_add">添加</string>
     <string name="logo_description">智能输入法助手 - 键盘与AI机器人结合的现代化图标</string>
+    <string name="floating_ball_description">悬浮球 - 快速切换输入法</string>
 </resources>

@@ -26,6 +26,9 @@ public class SettingsRepository {
     private static final String KEY_ACTIONS_JSON = "actions_json";
     private static final String KEY_PREVIOUS_IME = "previous_ime"; // 保存上一个输入法
     private static final String KEY_TEXT_MODE = "text_processing_mode"; // 文本处理模式
+    private static final String KEY_FLOATING_BALL_ENABLED = "floating_ball_enabled"; // 悬浮球开关
+    private static final String KEY_FLOATING_BALL_POSITION_X = "floating_ball_x"; // 悬浮球X位置
+    private static final String KEY_FLOATING_BALL_POSITION_Y = "floating_ball_y"; // 悬浮球Y位置
 
     private final SharedPreferences sharedPreferences;
     private final Gson gson;
@@ -129,6 +132,30 @@ public class SettingsRepository {
 
     public String getTextProcessingModeDescription() {
         return isReplaceMode() ? "替换模式" : "拼接模式";
+    }
+
+    // 悬浮球相关方法
+    public void setFloatingBallEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(KEY_FLOATING_BALL_ENABLED, enabled).apply();
+    }
+
+    public boolean isFloatingBallEnabled() {
+        return sharedPreferences.getBoolean(KEY_FLOATING_BALL_ENABLED, false);
+    }
+
+    public void saveFloatingBallPosition(int x, int y) {
+        sharedPreferences.edit()
+                .putInt(KEY_FLOATING_BALL_POSITION_X, x)
+                .putInt(KEY_FLOATING_BALL_POSITION_Y, y)
+                .apply();
+    }
+
+    public int getFloatingBallPositionX() {
+        return sharedPreferences.getInt(KEY_FLOATING_BALL_POSITION_X, 0);
+    }
+
+    public int getFloatingBallPositionY() {
+        return sharedPreferences.getInt(KEY_FLOATING_BALL_POSITION_Y, 100);
     }
 
     // 清除所有数据（用于重置或调试）

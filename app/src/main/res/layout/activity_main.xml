@@ -175,6 +175,75 @@
 
         </LinearLayout>
 
+        <!-- 悬浮球设置卡片 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/status_background"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="悬浮球设置"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- 悬浮球权限按钮 -->
+                <Button
+                    android:id="@+id/btn_floating_ball_permission"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="授予悬浮权限"
+                    android:layout_marginBottom="12dp"
+                    style="@android:style/Widget.Material.Button.Borderless" />
+
+                <!-- 悬浮球开关 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="启用悬浮球"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="点击悬浮球快速切换输入法"
+                            android:textSize="12sp"
+                            android:textColor="@color/text_secondary"
+                            android:layout_marginTop="4dp" />
+
+                    </LinearLayout>
+
+                    <Switch
+                        android:id="@+id/switch_floating_ball"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:text=""
+                        android:textOff="关闭"
+                        android:textOn="开启" />
+
+                </LinearLayout>
+
+        </LinearLayout>
+
         <!-- 输入法设置按钮 -->
         <Button
             android:id="@+id/btn_setup_ime"

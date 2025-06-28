@@ -28,8 +28,8 @@ android {
         applicationId "com.inputassistant.universal"
         minSdk 24
         targetSdk 35  // 更新到 Android 15 支持
-        versionCode 5
-        versionName "2.4.0"  // 语义化版本号: 主版本.次版本.修订版本 - 悬浮球架构重构，精准键盘检测
+        versionCode 6
+        versionName "2.5.0"  // 语义化版本号: 主版本.次版本.修订版本 - 新增悬浮球快速输入法切换功能
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
