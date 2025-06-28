@@ -297,13 +297,20 @@ public class MainActivity extends AppCompatActivity implements ActionAdapter.OnA
     }
 
     /**
-     * 启用悬浮球
+     * 启用悬浮球（前台服务版本）
      */
     private void enableFloatingBall() {
         settingsRepository.setFloatingBallEnabled(true);
         Intent serviceIntent = new Intent(this, FloatingBallService.class);
-        startService(serviceIntent);
-        showToast("悬浮球已启用");
+        
+        // Android 8.0+ 需要使用 startForegroundService
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent);
+        } else {
+            startService(serviceIntent);
+        }
+        
+        showToast("悬浮球已启用（前台服务模式）");
     }
 
     /**

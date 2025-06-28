@@ -29,9 +29,15 @@ public class BootReceiver extends BroadcastReceiver {
                 boolean isFloatingBallEnabled = settingsRepository.isFloatingBallEnabled();
                 
                 if (isFloatingBallEnabled && Settings.canDrawOverlays(context)) {
-                    // 启动悬浮球服务
+                    // 启动悬浮球前台服务
                     Intent serviceIntent = new Intent(context, FloatingBallService.class);
-                    context.startService(serviceIntent);
+                    
+                    // Android 8.0+ 需要使用 startForegroundService
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                        context.startForegroundService(serviceIntent);
+                    } else {
+                        context.startService(serviceIntent);
+                    }
                 }
             } catch (GeneralSecurityException | IOException e) {
                 e.printStackTrace();

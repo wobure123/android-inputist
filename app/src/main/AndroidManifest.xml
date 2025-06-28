@@ -12,6 +12,9 @@
     <!-- 后台运行权限 -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     
+    <!-- 通知权限 -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    
     <!-- 读取和写入系统设置权限（用于输入法切换） -->
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" 
         tools:ignore="ProtectedPermissions" />
